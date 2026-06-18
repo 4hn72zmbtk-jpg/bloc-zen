@@ -80,6 +80,7 @@
                 <th>Prénom</th>
                 <th>Nom</th>
                 <th>Téléphone</th>
+                <th>Note</th>
                 <th></th>
               </tr>
             </thead>
@@ -343,6 +344,7 @@
           <td>${b.first_name}</td>
           <td>${b.last_name}</td>
           <td>${b.phone}</td>
+          <td style="font-style:italic;color:#7a8f7c;font-size:13px">${b.note || '—'}</td>
           <td>
             <button class="btn-cancel-booking" onclick="cancelBooking('${b.id}', '${b.slot_id}', this)">
               Annuler

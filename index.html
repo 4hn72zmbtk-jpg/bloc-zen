@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>B.L.O.C ZEN — Agnès vous offre une pause 🌿</title>
+  <title>B.L.O.C ZEN — Agnès t'offre une pause 🌿</title>
   <link rel="stylesheet" href="style.css">
   <style>
     /* ── Sections spécifiques à cette page ── */
@@ -191,12 +191,8 @@
     }
 
     .programme-item {
-      background: var(--bg);
-      border-radius: 8px;
-      padding: 8px 12px;
       font-size: 0.88rem;
-      color: var(--text);
-      font-weight: 600;
+      color: var(--text-muted);
       display: flex;
       align-items: center;
       gap: 6px;
@@ -327,7 +323,7 @@
       </div>
     </div>
     <h1>Pause détente au bloc !</h1>
-    <p class="tagline">Ordonnance du jour : 20 minutes pour vous, sans contre-indication 😊</p>
+    <p class="tagline">Ordonnance du jour : 20 minutes pour toi, sans contre-indication 😊</p>
   </section>
 
   <!-- ── Agnes card ── -->
@@ -346,14 +342,14 @@
         </div>
       </div>
 
-      <!-- Message -->
+      <!-- Son mot -->
       <div class="prescription">
         <div class="prescription-label">Son mot</div>
         <p>
           Parce qu'entre deux blocs et trois cafés froids, on oublie parfois de souffler… 😅<br><br>
-          Les jours où je suis de matin comme vous, je vous propose <strong>une séance de relaxation douce par pressions manuelles</strong> — rien de médical, juste un vrai moment pour vous.<br><br>
-          Tête, épaules, mains, pieds… vous choisissez, je m'occupe du reste. 🌿<br><br>
-          <em>Au plaisir de vous offrir une petite parenthèse dans nos journées bien remplies !</em>
+          Les jours où je suis de matin comme toi, je te propose <strong>une séance de relaxation douce par pressions manuelles</strong> — rien de médical, juste un vrai moment pour toi.<br><br>
+          Tête, épaules, mains, pieds… tu choisis, je m'occupe du reste. 🌿<br><br>
+          <em>Au plaisir de t'offrir une petite parenthèse dans nos journées bien remplies !</em>
         </p>
       </div>
 
@@ -382,8 +378,8 @@
         <h3>⚠️ Deux trois trucs importants</h3>
         <ul>
           <li>C'est entre collègues, sur la base du volontariat — zéro pression !</li>
-          <li>Ce n'est ni un soin ni un acte thérapeutique. Juste de la détente.</li>
-          <li>Si vous avez une huile ou une crème que vous aimez, amenez-la 🧴</li>
+          <li>Ce n'est ni un soin ni un acte thérapeutique. Juste de la vraie détente.</li>
+          <li>Si tu as une huile ou une crème que tu aimes, amène-la 🧴</li>
           <li>Bonne humeur obligatoire. Ronflements tolérés… dans la limite du raisonnable 😂</li>
         </ul>
       </div>
@@ -396,7 +392,7 @@
     <div style="height:24px"></div>
     <div class="booking-intro-card">
       <h2>C'est parti, réservez ! 🌿</h2>
-      <p>Choisissez le jour et l'heure qui vous convient.<br>Ça ne prend que 30 secondes.</p>
+      <p>Choisis le jour et l'heure qui te convient.<br>Ça ne prend que 30 secondes.</p>
     </div>
     <div class="booking-arrow">↓</div>
   </div>
@@ -429,7 +425,7 @@
     <!-- Étape 3 : formulaire -->
     <div class="step hidden" id="step-form">
       <button class="btn-back" onclick="goToStep('step-slot', 'step-form')">← Retour</button>
-      <h2 class="step-title"><span class="step-num">3</span> Vos informations</h2>
+      <h2 class="step-title"><span class="step-num">3</span> Tes informations</h2>
       <span id="selected-slot-label" class="selected-label"></span>
 
       <form id="booking-form" novalidate>
@@ -446,8 +442,12 @@
           <input type="tel" id="phone" required placeholder="06 12 34 56 78" autocomplete="tel">
         </div>
         <div class="form-group">
-          <label for="email">Email <span style="font-weight:400;text-transform:none">(facultatif — pour recevoir votre lien d'annulation)</span></label>
+          <label for="email">Email <span style="font-weight:400;text-transform:none">(facultatif — pour recevoir ton lien d'annulation)</span></label>
           <input type="email" id="email" placeholder="marie.dupont@chu.fr" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="note">Un mot pour Agnès <span style="font-weight:400;text-transform:none">(facultatif — zone à masser, allergie, envie particulière…)</span></label>
+          <textarea id="note" rows="3" placeholder="Ex : j'ai mal aux épaules aujourd'hui… ou juste : merci ! 🌿" style="width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:8px;font-size:1rem;font-family:'Nunito',sans-serif;color:var(--text);background:var(--surface);resize:vertical;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"></textarea>
         </div>
         <div id="booking-error" style="display:none;color:var(--error);font-size:0.9rem;font-weight:600;margin-bottom:12px;padding:12px;background:#fdecea;border-radius:8px;"></div>
         <button type="submit" class="btn-primary" id="submit-btn">Confirmer ma réservation</button>
@@ -462,12 +462,12 @@
         <div class="confirm-details" id="confirm-details"></div>
         <p class="confirm-sub" id="confirm-sub"></p>
         <div id="cancel-link-box" class="cancel-link-box" style="display:none">
-          <strong>🔗 Votre lien d'annulation (à sauvegarder) :</strong>
+          <strong>🔗 Ton lien d'annulation (à sauvegarder) :</strong>
           <span id="cancel-link-text"></span>
         </div>
         <p class="confirm-sub" style="margin-top:12px">
           📍 Salle 4 — Bloc vasculaire<br>
-          N'oubliez pas votre huile ou crème si vous en avez une 🌿<br>
+          N'oublie pas ton huile ou crème si tu en as une 🌿<br>
           À tout à l'heure — Agnès
         </p>
         <br>
@@ -593,6 +593,7 @@
       const lastName  = document.getElementById('lastName').value.trim();
       const phone     = document.getElementById('phone').value.trim();
       const email     = document.getElementById('email').value.trim();
+      const note      = document.getElementById('note').value.trim();
 
       if (!firstName || !lastName || !phone) {
         errBox.textContent = 'Merci de remplir prénom, nom et téléphone.';
@@ -607,7 +608,7 @@
         const res = await fetch('/api/book', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slotId: selectedSlot.id, firstName, lastName, phone, email })
+          body: JSON.stringify({ slotId: selectedSlot.id, firstName, lastName, phone, email, note })
         });
         const result = await res.json();
 
@@ -617,7 +618,7 @@
             `${firstName} ${lastName}  ·  ${formatDate(selectedSlot.slot_date)}  ·  ${selectedSlot.time_slot}–${end}`;
           if (email) {
             document.getElementById('confirm-sub').textContent =
-              'Un email de confirmation avec votre lien d\'annulation vous a été envoyé.';
+              'Un email de confirmation avec ton lien d\'annulation t\'a été envoyé.';
           } else {
             document.getElementById('confirm-sub').textContent =
               'Sauvegardez le lien ci-dessous pour annuler si besoin.';
@@ -634,7 +635,7 @@
           btn.textContent = 'Confirmer ma réservation';
         }
       } catch {
-        errBox.textContent = 'Erreur réseau. Vérifiez votre connexion et réessayez.';
+        errBox.textContent = 'Erreur réseau. Vérifie ta connexion et réessaie.';
         errBox.style.display = 'block';
         btn.disabled = false;
         btn.textContent = 'Confirmer ma réservation';

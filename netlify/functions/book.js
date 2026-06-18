@@ -5,7 +5,7 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: cors() };
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
 
-  const { slotId, firstName, lastName, phone, email } = JSON.parse(event.body || '{}');
+  const { slotId, firstName, lastName, phone, email, note } = JSON.parse(event.body || '{}');
   if (!slotId || !firstName || !lastName || !phone) {
     return fail('Données manquantes (prénom, nom, téléphone, créneau requis).');
   }
@@ -39,7 +39,8 @@ exports.handler = async (event) => {
           last_name: lastName,
           phone,
           email: email || null,
-          cancel_token: cancelToken
+          cancel_token: cancelToken,
+          note: note || null
         })
       }
     );
@@ -59,7 +60,7 @@ exports.handler = async (event) => {
     const dateLabel = formatDate(slot.slot_date);
     const endTime   = addMinutes(slot.time_slot, 20);
 
-    await sendEmails({ firstName, lastName, phone, email, dateLabel, timeSlot: slot.time_slot, endTime, cancelUrl });
+    await sendEmails({ firstName, lastName, phone, email, note, dateLabel, timeSlot: slot.time_slot, endTime, cancelUrl });
 
     return ok({ success: true, cancelUrl });
 
@@ -70,7 +71,7 @@ exports.handler = async (event) => {
 };
 
 // ── Email ─────────────────────────────────────────────────────────
-async function sendEmails({ firstName, lastName, phone, email, dateLabel, timeSlot, endTime, cancelUrl }) {
+async function sendEmails({ firstName, lastName, phone, email, note, dateLabel, timeSlot, endTime, cancelUrl }) {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -96,6 +97,7 @@ async function sendEmails({ firstName, lastName, phone, email, dateLabel, timeSl
           ${email ? `<tr><td style="padding:6px 0;color:#7a8f7c">Email</td><td>${email}</td></tr>` : ''}
           <tr><td style="padding:6px 0;color:#7a8f7c">Date</td><td style="text-transform:capitalize"><strong>${dateLabel}</strong></td></tr>
           <tr><td style="padding:6px 0;color:#7a8f7c">Horaire</td><td><strong>${timeSlot} – ${endTime}</strong></td></tr>
+          ${note ? `<tr><td style="padding:6px 0;color:#7a8f7c;vertical-align:top">Note</td><td style="font-style:italic">"${note}"</td></tr>` : ''}
         </table>
         <hr style="border:1px solid #d8d0c4;margin:20px 0">
         <p style="font-size:12px;color:#7a8f7c">Lien d'annulation : <a href="${cancelUrl}">${cancelUrl}</a></p>
