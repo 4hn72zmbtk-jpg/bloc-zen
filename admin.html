@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLOC ZEN — Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <div class="logo">B.L.O.C <span>ZEN</span></div>
+    <nav><a href="index.html">← Retour au site</a></nav>
+  </header>
+
+  <!-- ── Login gate ── -->
+  <div id="login-section" class="admin-login">
+    <div class="admin-card">
+      <div style="font-size:2rem; margin-bottom:12px">🌿</div>
+      <h1>Espace Admin</h1>
+      <p>Entrez votre mot de passe pour continuer.</p>
+      <div id="login-error" class="login-error" style="display:none">Mot de passe incorrect.</div>
+      <div class="form-group">
+        <label for="pwd">Mot de passe</label>
+        <input type="password" id="pwd" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn-primary" onclick="login()">Connexion</button>
+    </div>
+  </div>
+
+  <!-- ── Admin panel (hidden until login) ── -->
+  <div id="admin-section" class="admin-panel hidden">
+
+    <div class="admin-header">
+      <h1>🌿 Tableau de bord</h1>
+      <button class="btn-secondary" onclick="logout()" style="padding:8px 18px; font-size:0.85rem">Déconnexion</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-planning', this)">📅 Planning</button>
+      <button class="tab-btn" onclick="switchTab('tab-reservations', this)">👥 Réservations</button>
+    </div>
+
+    <!-- Tab 1 : Planning -->
+    <div id="tab-planning" class="tab-content active">
+
+      <div class="add-day-box">
+        <h3>Ajouter une journée disponible</h3>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px">
+          Les deux créneaux (13h30 et 14h00) seront automatiquement créés.
+        </p>
+        <div class="add-day-row">
+          <input type="date" id="new-date" min="">
+          <button class="btn-add" onclick="addDay()">+ Ajouter</button>
+        </div>
+        <div id="add-day-msg" style="margin-top:10px; font-size:0.85rem; font-weight:600; display:none"></div>
+      </div>
+
+      <div id="days-loading" style="text-align:center; padding:20px; color:var(--text-muted)">
+        <span class="loading-spinner"></span>
+      </div>
+      <div id="days-list" class="days-list" style="display:none"></div>
+      <div id="no-days-msg" style="display:none; text-align:center; padding:30px; color:var(--text-muted)">
+        Aucune journée configurée. Ajoutez une date ci-dessus.
+      </div>
+    </div>
+
+    <!-- Tab 2 : Réservations -->
+    <div id="tab-reservations" class="tab-content">
+      <div id="bookings-loading" style="text-align:center; padding:20px; color:var(--text-muted)">
+        <span class="loading-spinner"></span>
+      </div>
+      <div id="bookings-wrap" style="display:none">
+        <div class="bookings-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Horaire</th>
+                <th>Prénom</th>
+                <th>Nom</th>
+                <th>Téléphone</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="bookings-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="no-bookings-msg" class="no-bookings" style="display:none">
+        🌱 Aucune réservation pour le moment.
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let adminPassword = '';
+
+    // ── Auth ─────────────────────────────────────────
+    function login() {
+      const pwd = document.getElementById('pwd').value;
+      if (!pwd) return;
+      adminPassword = pwd;
+      // Test password by making an API call
+      loadPlanning();
+    }
+
+    document.getElementById('pwd').addEventListener('keydown', e => {
+      if (e.key === 'Enter') login();
+    });
+
+    function logout() {
+      adminPassword = '';
+      document.getElementById('admin-section').classList.add('hidden');
+      document.getElementById('login-section').classList.remove('hidden');
+      document.getElementById('pwd').value = '';
+    }
+
+    function authHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'x-admin-password': adminPassword
+      };
+    }
+
+    // ── Tabs ─────────────────────────────────────────
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+      if (tabId === 'tab-reservations') loadBookings();
+    }
+
+    // ── Planning ──────────────────────────────────────
+    async function loadPlanning() {
+      try {
+        const res = await fetch('/api/admin-slots', { headers: authHeaders() });
+        if (res.status === 401) {
+          document.getElementById('login-error').style.display = 'block';
+          return;
+        }
+        // Login success
+        document.getElementById('login-error').style.display = 'none';
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('admin-section').classList.remove('hidden');
+
+        const data = await res.json();
+        renderPlanning(data.slots || []);
+      } catch {
+        document.getElementById('login-error').textContent = 'Erreur réseau.';
+        document.getElementById('login-error').style.display = 'block';
+      }
+    }
+
+    function renderPlanning(slots) {
+      document.getElementById('days-loading').style.display = 'none';
+      const listEl = document.getElementById('days-list');
+      const noMsg  = document.getElementById('no-days-msg');
+
+      // Group by date
+      const dateMap = {};
+      slots.forEach(s => {
+        if (!dateMap[s.slot_date]) dateMap[s.slot_date] = [];
+        dateMap[s.slot_date].push(s);
+      });
+
+      const dates = Object.keys(dateMap).sort();
+
+      if (dates.length === 0) {
+        noMsg.style.display = 'block';
+        listEl.style.display = 'none';
+        return;
+      }
+
+      noMsg.style.display = 'none';
+      listEl.style.display = 'flex';
+      listEl.innerHTML = '';
+
+      dates.forEach(date => {
+        const daySlots = dateMap[date].sort((a, b) => a.time_slot.localeCompare(b.time_slot));
+        const label = new Date(date + 'T00:00:00').toLocaleDateString('fr-FR', {
+          weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        });
+
+        const div = document.createElement('div');
+        div.className = 'day-item';
+        div.innerHTML = `
+          <div class="day-item-header">
+            <span class="day-date">${label}</span>
+            <button class="btn-delete-day" onclick="deleteDay('${date}', this.closest('.day-item'))">🗑 Supprimer</button>
+          </div>
+          <div class="slots-row" id="slots-${date}"></div>
+        `;
+        listEl.appendChild(div);
+
+        const row = div.querySelector(`#slots-${date}`);
+        daySlots.forEach(slot => {
+          const end = addMinutes(slot.time_slot, 20);
+          const hasBooking = slot.bookings && slot.bookings.length > 0;
+          const booking = hasBooking ? slot.bookings[0] : null;
+
+          let cls, label, title;
+          if (hasBooking) {
+            cls = 'booked';
+            label = `${slot.time_slot}–${end} · ${booking.first_name} ${booking.last_name}`;
+            title = `📞 ${booking.phone}`;
+          } else if (slot.is_available) {
+            cls = 'available';
+            label = `${slot.time_slot}–${end} · Libre`;
+            title = 'Cliquer pour fermer ce créneau';
+          } else {
+            cls = 'closed';
+            label = `${slot.time_slot}–${end} · Fermé`;
+            title = 'Cliquer pour rouvrir ce créneau';
+          }
+
+          const btn = document.createElement('button');
+          btn.className = `slot-toggle ${cls}`;
+          btn.textContent = label;
+          btn.title = title;
+          if (!hasBooking) {
+            btn.onclick = () => toggleSlot(slot.id, !slot.is_available, btn, slot.time_slot, end);
+          }
+          row.appendChild(btn);
+        });
+      });
+    }
+
+    async function addDay() {
+      const dateInput = document.getElementById('new-date');
+      const date = dateInput.value;
+      const msgEl = document.getElementById('add-day-msg');
+
+      if (!date) {
+        msgEl.textContent = '⚠️ Choisissez une date.';
+        msgEl.style.color = 'var(--error)';
+        msgEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin-slots', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ date })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          msgEl.textContent = '⚠️ ' + data.error;
+          msgEl.style.color = 'var(--error)';
+        } else {
+          msgEl.textContent = '✓ Journée ajoutée avec succès !';
+          msgEl.style.color = 'var(--success)';
+          dateInput.value = '';
+          await reloadPlanning();
+        }
+        msgEl.style.display = 'block';
+        setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
+      } catch {
+        msgEl.textContent = '⚠️ Erreur réseau.';
+        msgEl.style.color = 'var(--error)';
+        msgEl.style.display = 'block';
+      }
+    }
+
+    async function toggleSlot(slotId, newAvailable, btn, start, end) {
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      try {
+        await fetch('/api/admin-slots', {
+          method: 'PATCH',
+          headers: authHeaders(),
+          body: JSON.stringify({ slotId, isAvailable: newAvailable })
+        });
+        await reloadPlanning();
+      } catch {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    }
+
+    async function deleteDay(date, el) {
+      if (!confirm(`Supprimer tous les créneaux du ${new Date(date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} ?`)) return;
+      try {
+        await fetch('/api/admin-slots', {
+          method: 'DELETE',
+          headers: authHeaders(),
+          body: JSON.stringify({ date })
+        });
+        el.remove();
+      } catch {
+        alert('Erreur réseau.');
+      }
+    }
+
+    async function reloadPlanning() {
+      document.getElementById('days-loading').style.display = 'block';
+      document.getElementById('days-list').style.display = 'none';
+      const res = await fetch('/api/admin-slots', { headers: authHeaders() });
+      const data = await res.json();
+      renderPlanning(data.slots || []);
+    }
+
+    // ── Bookings ──────────────────────────────────────
+    async function loadBookings() {
+      document.getElementById('bookings-loading').style.display = 'block';
+      document.getElementById('bookings-wrap').style.display = 'none';
+      document.getElementById('no-bookings-msg').style.display = 'none';
+
+      try {
+        const res = await fetch('/api/admin-bookings', { headers: authHeaders() });
+        const data = await res.json();
+        renderBookings(data.bookings || []);
+      } catch {
+        document.getElementById('bookings-loading').style.display = 'none';
+      }
+    }
+
+    function renderBookings(bookings) {
+      document.getElementById('bookings-loading').style.display = 'none';
+      const tbody = document.getElementById('bookings-body');
+      tbody.innerHTML = '';
+
+      if (bookings.length === 0) {
+        document.getElementById('no-bookings-msg').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('bookings-wrap').style.display = 'block';
+      bookings.forEach(b => {
+        const slot = b.available_slots;
+        const dateLabel = slot
+          ? new Date(slot.slot_date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+          : '—';
+        const timeLabel = slot ? `${slot.time_slot}–${addMinutes(slot.time_slot, 20)}` : '—';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="text-transform:capitalize">${dateLabel}</td>
+          <td><strong>${timeLabel}</strong></td>
+          <td>${b.first_name}</td>
+          <td>${b.last_name}</td>
+          <td>${b.phone}</td>
+          <td>
+            <button class="btn-cancel-booking" onclick="cancelBooking('${b.id}', '${b.slot_id}', this)">
+              Annuler
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function cancelBooking(bookingId, slotId, btn) {
+      if (!confirm('Annuler cette réservation ?')) return;
+      btn.disabled = true;
+      btn.textContent = '…';
+      try {
+        const res = await fetch('/api/admin-bookings', {
+          method: 'DELETE',
+          headers: authHeaders(),
+          body: JSON.stringify({ bookingId, slotId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          btn.closest('tr').remove();
+          const tbody = document.getElementById('bookings-body');
+          if (tbody.children.length === 0) {
+            document.getElementById('bookings-wrap').style.display = 'none';
+            document.getElementById('no-bookings-msg').style.display = 'block';
+          }
+        }
+      } catch {
+        btn.disabled = false;
+        btn.textContent = 'Annuler';
+      }
+    }
+
+    // ── Utils ─────────────────────────────────────────
+    function addMinutes(timeStr, min) {
+      const [h, m] = timeStr.split(':').map(Number);
+      const t = h * 60 + m + min;
+      return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+    }
+
+    // Set min date to today
+    document.getElementById('new-date').min = new Date().toISOString().split('T')[0];
+  </script>
+</body>
+</html>

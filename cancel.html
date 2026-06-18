@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLOC ZEN — Annulation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <div class="logo">B.L.O.C <span>ZEN</span></div>
+  </header>
+
+  <div class="cancel-page">
+
+    <!-- Loading -->
+    <div id="state-loading" class="cancel-card">
+      <span class="loading-spinner"></span>
+      <p style="margin-top:12px; color:var(--text-muted)">Chargement de votre réservation…</p>
+    </div>
+
+    <!-- Booking found → confirm cancellation -->
+    <div id="state-confirm" class="cancel-card hidden">
+      <div style="font-size:2rem; margin-bottom:12px">🌿</div>
+      <h1>Annuler ma réservation</h1>
+      <p style="color:var(--text-muted); margin-top:6px">Vous êtes sur le point d'annuler :</p>
+
+      <div class="cancel-booking-info" id="booking-info"></div>
+
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px">
+        Le créneau sera libéré et disponible pour une autre personne.
+      </p>
+
+      <button class="btn-danger" id="btn-confirm-cancel" onclick="confirmCancel()">
+        Confirmer l'annulation
+      </button>
+      <div style="margin-top:12px">
+        <a href="index.html" style="color:var(--text-muted); font-size:0.9rem; text-decoration:none">
+          ← Je ne veux pas annuler
+        </a>
+      </div>
+    </div>
+
+    <!-- Error : not found -->
+    <div id="state-not-found" class="cancel-card hidden">
+      <div style="font-size:2rem; margin-bottom:12px">🍂</div>
+      <h1 style="font-size:1.3rem">Réservation introuvable</h1>
+      <p style="color:var(--text-muted); margin-top:8px">
+        Ce lien d'annulation est invalide ou la réservation a déjà été annulée.
+      </p>
+      <a href="index.html" class="btn-secondary" style="display:inline-block; margin-top:20px; text-decoration:none">
+        Retour à l'accueil
+      </a>
+    </div>
+
+    <!-- Success : cancelled -->
+    <div id="state-success" class="cancel-card hidden">
+      <div style="font-size:2rem; margin-bottom:12px">✓</div>
+      <h1 style="color:var(--success); font-size:1.4rem">Réservation annulée</h1>
+      <p style="color:var(--text-muted); margin-top:10px">
+        Votre réservation a bien été annulée. Le créneau est de nouveau disponible.
+      </p>
+      <a href="index.html" class="btn-secondary" style="display:inline-block; margin-top:20px; text-decoration:none">
+        Retour à l'accueil
+      </a>
+    </div>
+
+  </div>
+
+  <script>
+    let cancelToken = null;
+    let bookingData = null;
+
+    function addMinutes(timeStr, min) {
+      const [h, m] = timeStr.split(':').map(Number);
+      const t = h * 60 + m + min;
+      return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+    }
+
+    function showState(id) {
+      ['state-loading', 'state-confirm', 'state-not-found', 'state-success']
+        .forEach(s => document.getElementById(s).classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    async function loadBooking() {
+      const params = new URLSearchParams(window.location.search);
+      cancelToken = params.get('token');
+
+      if (!cancelToken) {
+        showState('state-not-found');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/cancel?token=${encodeURIComponent(cancelToken)}`);
+        if (res.status === 404) {
+          showState('state-not-found');
+          return;
+        }
+        const data = await res.json();
+        if (data.error || !data.booking) {
+          showState('state-not-found');
+          return;
+        }
+
+        bookingData = data.booking;
+        const slot = bookingData.available_slots;
+        const dateLabel = slot
+          ? new Date(slot.slot_date + 'T00:00:00').toLocaleDateString('fr-FR', {
+              weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+            })
+          : '—';
+        const timeLabel = slot ? `${slot.time_slot} – ${addMinutes(slot.time_slot, 20)}` : '—';
+
+        document.getElementById('booking-info').innerHTML = `
+          <p>👤 <strong>${bookingData.first_name} ${bookingData.last_name}</strong></p>
+          <p>📅 <strong>${dateLabel}</strong></p>
+          <p>🕐 <strong>${timeLabel}</strong></p>
+        `;
+
+        showState('state-confirm');
+      } catch {
+        showState('state-not-found');
+      }
+    }
+
+    async function confirmCancel() {
+      const btn = document.getElementById('btn-confirm-cancel');
+      btn.disabled = true;
+      btn.textContent = 'Annulation en cours…';
+
+      try {
+        const res = await fetch(`/api/cancel?token=${encodeURIComponent(cancelToken)}`, {
+          method: 'POST'
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showState('state-success');
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Confirmer l\'annulation';
+          alert(data.error || 'Erreur lors de l\'annulation.');
+        }
+      } catch {
+        btn.disabled = false;
+        btn.textContent = 'Confirmer l\'annulation';
+        alert('Erreur réseau. Réessayez.');
+      }
+    }
+
+    loadBooking();
+  </script>
+</body>
+</html>
