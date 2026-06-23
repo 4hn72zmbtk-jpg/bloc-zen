@@ -9,3 +9,7 @@
 
 [context.production.environment]
   NODE_VERSION = "18"
+
+# Robot d'envoi des demandes d'avis — tourne chaque jour à 17h UTC (~18h/19h en France)
+[functions."send-feedback-requests"]
+  schedule = "0 17 * * *"

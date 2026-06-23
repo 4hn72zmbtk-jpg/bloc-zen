@@ -374,6 +374,51 @@
       background: var(--border);
     }
 
+    /* ── Témoignages ── */
+    .testimonials-section {
+      max-width: 580px;
+      margin: 48px auto 0;
+      padding: 0 16px;
+    }
+
+    .testimonials-title {
+      font-family: 'Lora', serif;
+      font-size: 1.4rem;
+      color: var(--text);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .testimonials-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .testimonial-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .testimonial-stars { font-size: 0.9rem; margin-bottom: 6px; }
+
+    .testimonial-comment {
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.6;
+      font-style: italic;
+    }
+
+    .testimonial-author {
+      font-size: 0.82rem;
+      color: var(--primary);
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
   </style>
 </head>
 <body>
@@ -464,6 +509,12 @@
       </div>
 
     </div>
+  </section>
+
+  <!-- ── Témoignages (affichés seulement si avis publics) ── -->
+  <section id="testimonials" class="testimonials-section" style="display:none">
+    <h2 class="testimonials-title">Ils ont testé 🌿</h2>
+    <div id="testimonials-list" class="testimonials-list"></div>
   </section>
 
   <!-- ── Booking header ── -->
@@ -748,8 +799,35 @@
       showOnly('step-date');
     }
 
+    async function loadTestimonials() {
+      try {
+        const res = await fetch('/api/get-feedbacks');
+        const data = await res.json();
+        const list = data.feedbacks || [];
+        if (list.length === 0) return;
+        const wrap = document.getElementById('testimonials-list');
+        wrap.innerHTML = '';
+        list.forEach(f => {
+          const card = document.createElement('div');
+          card.className = 'testimonial-card';
+          card.innerHTML = `
+            <div class="testimonial-stars">${'⭐'.repeat(f.rating || 0)}</div>
+            ${f.comment ? `<div class="testimonial-comment">« ${escapeHtml(f.comment)} »</div>` : ''}
+            <div class="testimonial-author">— ${escapeHtml(f.first_name || 'Une collègue')}</div>
+          `;
+          wrap.appendChild(card);
+        });
+        document.getElementById('testimonials').style.display = 'block';
+      } catch {}
+    }
+
+    function escapeHtml(s) {
+      return (s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
     setProgress(1);
     loadSlots();
+    loadTestimonials();
   </script>
 </body>
 </html>

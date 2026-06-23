@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLOC ZEN — Ton avis 🌿</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .stars {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin: 8px 0 24px;
+    }
+    .star {
+      font-size: 2.4rem;
+      cursor: pointer;
+      filter: grayscale(1) opacity(0.35);
+      transition: transform 0.15s, filter 0.15s;
+      user-select: none;
+    }
+    .star:hover { transform: scale(1.15); }
+    .star.on { filter: none; transform: scale(1.05); }
+    textarea.avis-text {
+      width: 100%;
+      padding: 14px 18px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-family: 'Nunito', sans-serif;
+      color: var(--text);
+      background: var(--surface);
+      resize: vertical;
+      line-height: 1.6;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .avis-text:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(106,148,120,0.12);
+    }
+    .rating-label {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      min-height: 20px;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">B.L.O.C <span>ZEN</span></div>
+    <nav><a href="index.html">← Accueil</a></nav>
+  </header>
+
+  <div class="cancel-page">
+
+    <!-- Loading -->
+    <div id="state-loading" class="cancel-card">
+      <span class="loading-spinner"></span>
+      <p style="margin-top:12px; color:var(--text-muted)">Chargement…</p>
+    </div>
+
+    <!-- Form -->
+    <div id="state-form" class="cancel-card hidden">
+      <div style="font-size:2rem; margin-bottom:12px">🌿</div>
+      <h1>Alors, cette pause ?</h1>
+      <p style="color:var(--text-muted); margin-top:6px" id="intro-text">Ton retour reste entre nous 😊</p>
+
+      <div class="rating-label" id="rating-label">Mets une note</div>
+      <div class="stars" id="stars">
+        <span class="star" data-v="1">⭐</span>
+        <span class="star" data-v="2">⭐</span>
+        <span class="star" data-v="3">⭐</span>
+        <span class="star" data-v="4">⭐</span>
+        <span class="star" data-v="5">⭐</span>
+      </div>
+
+      <div class="form-group" style="text-align:left;margin-bottom:16px">
+        <label for="comment">Ton mot (facultatif)</label>
+        <textarea id="comment" class="avis-text" rows="4" placeholder="Ce que tu en as pensé, ce qui t'a fait du bien… 🌿"></textarea>
+      </div>
+
+      <div id="avis-error" style="display:none;color:var(--error);font-size:0.88rem;font-weight:600;margin-bottom:12px;padding:10px 14px;background:#fdecea;border-radius:10px;"></div>
+      <button class="btn-primary" id="submit-avis" onclick="submitAvis()">Envoyer mon avis 🌿</button>
+    </div>
+
+    <!-- Already done -->
+    <div id="state-already" class="cancel-card hidden">
+      <div style="font-size:2rem; margin-bottom:12px">🌿</div>
+      <h1 style="font-size:1.4rem">Avis déjà envoyé</h1>
+      <p style="color:var(--text-muted); margin-top:8px">Tu as déjà laissé ton retour — merci beaucoup 💚</p>
+      <a href="index.html" class="btn-secondary" style="display:inline-block; margin-top:20px; text-decoration:none">Retour à l'accueil</a>
+    </div>
+
+    <!-- Not found -->
+    <div id="state-not-found" class="cancel-card hidden">
+      <div style="font-size:2rem; margin-bottom:12px">🍂</div>
+      <h1 style="font-size:1.3rem">Lien invalide</h1>
+      <p style="color:var(--text-muted); margin-top:8px">Ce lien d'avis n'est pas valide.</p>
+      <a href="index.html" class="btn-secondary" style="display:inline-block; margin-top:20px; text-decoration:none">Retour à l'accueil</a>
+    </div>
+
+    <!-- Success -->
+    <div id="state-success" class="cancel-card hidden">
+      <div class="confirm-icon" style="margin:0 auto 20px">💚</div>
+      <h1 style="color:var(--success)">Merci infiniment !</h1>
+      <p style="color:var(--text-muted); margin-top:10px">Ton retour compte énormément. À très vite pour une prochaine pause 🌿</p>
+      <a href="index.html" class="btn-secondary" style="display:inline-block; margin-top:20px; text-decoration:none">Retour à l'accueil</a>
+    </div>
+
+  </div>
+
+  <script>
+    const token = new URLSearchParams(window.location.search).get('token');
+    let rating = 0;
+
+    const LABELS = ['', 'Bof…', 'Moyen', 'Bien', 'Très bien', 'Au top ! 🌿'];
+
+    function showState(id) {
+      ['state-loading','state-form','state-already','state-not-found','state-success']
+        .forEach(s => document.getElementById(s).classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    // Star interactions
+    const stars = [...document.querySelectorAll('.star')];
+    function paint(v) {
+      stars.forEach(s => s.classList.toggle('on', Number(s.dataset.v) <= v));
+      document.getElementById('rating-label').textContent = v ? LABELS[v] : 'Mets une note';
+    }
+    stars.forEach(s => {
+      s.addEventListener('mouseenter', () => paint(Number(s.dataset.v)));
+      s.addEventListener('mouseleave', () => paint(rating));
+      s.addEventListener('click', () => { rating = Number(s.dataset.v); paint(rating); });
+    });
+
+    async function init() {
+      if (!token) { showState('state-not-found'); return; }
+      try {
+        const res = await fetch('/api/feedback?token=' + encodeURIComponent(token));
+        const data = await res.json();
+        if (!data.found) { showState('state-not-found'); return; }
+        if (data.alreadyDone) { showState('state-already'); return; }
+        if (data.firstName) {
+          document.getElementById('intro-text').textContent =
+            `Bonjour ${data.firstName} ! Ton retour reste entre nous 😊`;
+        }
+        showState('state-form');
+      } catch {
+        showState('state-not-found');
+      }
+    }
+
+    async function submitAvis() {
+      const errBox = document.getElementById('avis-error');
+      errBox.style.display = 'none';
+      if (!rating) {
+        errBox.textContent = 'Choisis une note (les étoiles) 🌟';
+        errBox.style.display = 'block';
+        return;
+      }
+      const btn = document.getElementById('submit-avis');
+      btn.disabled = true;
+      btn.textContent = 'Envoi…';
+      const comment = document.getElementById('comment').value.trim();
+      try {
+        const res = await fetch('/api/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, rating, comment })
+        });
+        const data = await res.json();
+        if (data.success) { showState('state-success'); }
+        else {
+          errBox.textContent = data.error || 'Erreur. Réessaie.';
+          errBox.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Envoyer mon avis 🌿';
+        }
+      } catch {
+        errBox.textContent = 'Erreur réseau. Réessaie.';
+        errBox.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Envoyer mon avis 🌿';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

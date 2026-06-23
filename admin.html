@@ -39,6 +39,7 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('tab-planning', this)">📅 Planning</button>
       <button class="tab-btn" onclick="switchTab('tab-reservations', this)">👥 Réservations</button>
+      <button class="tab-btn" onclick="switchTab('tab-avis', this)">⭐ Avis</button>
     </div>
 
     <!-- Tab 1 : Planning -->
@@ -93,6 +94,20 @@
       </div>
     </div>
 
+    <!-- Tab 3 : Avis -->
+    <div id="tab-avis" class="tab-content">
+      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:20px">
+        🔒 Ces avis sont <strong>privés</strong>. Clique sur « ⭐ Mettre en avant » pour afficher un avis en témoignage public sur le site.
+      </p>
+      <div id="avis-loading" style="text-align:center; padding:20px; color:var(--text-muted)">
+        <span class="loading-spinner"></span>
+      </div>
+      <div id="avis-list" class="days-list" style="display:none"></div>
+      <div id="no-avis-msg" class="no-bookings" style="display:none">
+        🌱 Aucun avis pour le moment.
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -132,6 +147,7 @@
       document.getElementById(tabId).classList.add('active');
       btn.classList.add('active');
       if (tabId === 'tab-reservations') loadBookings();
+      if (tabId === 'tab-avis') loadAvis();
     }
 
     // ── Planning ──────────────────────────────────────
@@ -378,6 +394,91 @@
         btn.disabled = false;
         btn.textContent = 'Annuler';
       }
+    }
+
+    // ── Avis ──────────────────────────────────────────
+    async function loadAvis() {
+      document.getElementById('avis-loading').style.display = 'block';
+      document.getElementById('avis-list').style.display = 'none';
+      document.getElementById('no-avis-msg').style.display = 'none';
+      try {
+        const res = await fetch('/api/admin-feedbacks', { headers: authHeaders() });
+        const data = await res.json();
+        renderAvis(data.feedbacks || []);
+      } catch {
+        document.getElementById('avis-loading').style.display = 'none';
+      }
+    }
+
+    function renderAvis(feedbacks) {
+      document.getElementById('avis-loading').style.display = 'none';
+      const list = document.getElementById('avis-list');
+      list.innerHTML = '';
+
+      if (feedbacks.length === 0) {
+        document.getElementById('no-avis-msg').style.display = 'block';
+        return;
+      }
+
+      list.style.display = 'flex';
+      feedbacks.forEach(f => {
+        const dateLabel = f.slot_date
+          ? new Date(f.slot_date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+          : '';
+        const starsFull = '⭐'.repeat(f.rating || 0);
+        const div = document.createElement('div');
+        div.className = 'day-item';
+        div.innerHTML = `
+          <div class="day-item-header" style="align-items:flex-start">
+            <div>
+              <span class="day-date" style="text-transform:none">${f.first_name || 'Anonyme'}</span>
+              <span style="color:var(--text-muted); font-size:0.8rem; margin-left:8px">${dateLabel}</span>
+              <div style="font-size:1rem; margin-top:2px">${starsFull}</div>
+            </div>
+            <button class="btn-delete-day" onclick="deleteAvis('${f.id}', this.closest('.day-item'))">🗑</button>
+          </div>
+          ${f.comment ? `<p style="font-size:0.92rem; color:var(--text); line-height:1.6; margin:6px 0 14px; font-style:italic">« ${escapeHtml(f.comment)} »</p>` : '<p style="color:var(--text-muted);font-size:0.85rem;margin:6px 0 14px">(pas de commentaire)</p>'}
+          <button class="slot-toggle ${f.is_public ? 'available' : 'closed'}"
+                  onclick="togglePublic('${f.id}', ${!f.is_public}, this)">
+            ${f.is_public ? '👁️ Visible en témoignage — cliquer pour masquer' : '⭐ Mettre en avant (public)'}
+          </button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    async function togglePublic(id, makePublic, btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      try {
+        await fetch('/api/admin-feedbacks', {
+          method: 'PATCH',
+          headers: authHeaders(),
+          body: JSON.stringify({ id, isPublic: makePublic })
+        });
+        await loadAvis();
+      } catch {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    }
+
+    async function deleteAvis(id, el) {
+      if (!confirm('Supprimer cet avis définitivement ?')) return;
+      try {
+        await fetch('/api/admin-feedbacks', {
+          method: 'DELETE',
+          headers: authHeaders(),
+          body: JSON.stringify({ id })
+        });
+        el.remove();
+      } catch {
+        alert('Erreur réseau.');
+      }
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     }
 
     // ── Utils ─────────────────────────────────────────
