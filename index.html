@@ -267,10 +267,16 @@
       color: var(--text-muted);
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 8px;
     }
 
-    .programme-item::before { content: '🌿'; font-size: 0.75rem; }
+    .programme-item .pi-emoji {
+      font-size: 1rem;
+      line-height: 1;
+      width: 1.2em;
+      text-align: center;
+      flex-shrink: 0;
+    }
 
     /* Important */
     .important-section {
@@ -489,12 +495,12 @@
       <div class="programme-section">
         <h3>Au programme (au choix)</h3>
         <div class="programme-grid">
-          <div class="programme-item">Tête</div>
-          <div class="programme-item">Épaules</div>
-          <div class="programme-item">Mains</div>
-          <div class="programme-item">Pieds</div>
-          <div class="programme-item">Chevilles</div>
-          <div class="programme-item">Mollets</div>
+          <div class="programme-item"><span class="pi-emoji">💆</span>Tête</div>
+          <div class="programme-item"><span class="pi-emoji">🤲</span>Épaules</div>
+          <div class="programme-item"><span class="pi-emoji">✋</span>Mains</div>
+          <div class="programme-item"><span class="pi-emoji">🦶</span>Pieds</div>
+          <div class="programme-item"><span class="pi-emoji">🧘</span>Dos</div>
+          <div class="programme-item"><span class="pi-emoji">🦵</span>Mollets</div>
         </div>
       </div>
 
@@ -578,8 +584,8 @@
           <input type="tel" id="phone" required placeholder="06 12 34 56 78" autocomplete="tel">
         </div>
         <div class="form-group">
-          <label for="email">Email <span style="font-weight:400;text-transform:none;letter-spacing:0">(facultatif — pour recevoir ton lien d'annulation)</span></label>
-          <input type="email" id="email" placeholder="marie.dupont@chu.fr" autocomplete="email">
+          <label for="email">Email <span style="font-weight:400;text-transform:none;letter-spacing:0">(pour recevoir ta confirmation et ton lien d'annulation)</span></label>
+          <input type="email" id="email" required placeholder="marie.dupont@chu.fr" autocomplete="email">
         </div>
         <div class="form-group">
           <label for="note">Un mot pour Agnès <span style="font-weight:400;text-transform:none;letter-spacing:0">(facultatif)</span></label>
@@ -741,8 +747,14 @@
       const email     = document.getElementById('email').value.trim();
       const note      = document.getElementById('note').value.trim();
 
-      if (!firstName || !lastName || !phone) {
-        errBox.textContent = 'Merci de remplir prénom, nom et téléphone.';
+      if (!firstName || !lastName || !phone || !email) {
+        errBox.textContent = 'Merci de remplir prénom, nom, téléphone et email.';
+        errBox.style.display = 'block';
+        return;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errBox.textContent = 'Cet email ne semble pas valide.';
         errBox.style.display = 'block';
         return;
       }

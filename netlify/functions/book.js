@@ -6,8 +6,8 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
 
   const { slotId, firstName, lastName, phone, email, note } = JSON.parse(event.body || '{}');
-  if (!slotId || !firstName || !lastName || !phone) {
-    return fail('Données manquantes (prénom, nom, téléphone, créneau requis).');
+  if (!slotId || !firstName || !lastName || !phone || !email) {
+    return fail('Données manquantes (prénom, nom, téléphone, email, créneau requis).');
   }
 
   const sb = supabaseHeaders();
