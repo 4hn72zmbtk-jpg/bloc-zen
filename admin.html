@@ -18,8 +18,23 @@
     <div class="admin-card">
       <div style="font-size:2rem; margin-bottom:12px">🌿</div>
       <h1>Espace Admin</h1>
-      <p>Entre ton mot de passe pour continuer.</p>
+      <p id="login-sub">Entre ton mot de passe pour continuer.</p>
       <div id="login-error" class="login-error" style="display:none">Mot de passe incorrect.</div>
+
+      <!-- Déverrouillage biométrique (affiché seulement s'il a été activé) -->
+      <div id="bio-unlock" style="display:none">
+        <button class="btn-primary" onclick="unlockWithBiometrics()" id="bio-unlock-btn"
+                style="display:flex;align-items:center;justify-content:center;gap:10px">
+          <span style="font-size:1.2rem">👤</span> Déverrouiller
+        </button>
+        <button onclick="showPasswordForm()"
+                style="background:none;border:none;color:var(--text-muted);font-family:'Nunito',sans-serif;
+                       font-size:0.85rem;font-weight:600;cursor:pointer;margin-top:14px;text-decoration:underline">
+          Utiliser le mot de passe
+        </button>
+      </div>
+
+      <div id="password-form">
       <div class="form-group">
         <label for="pwd">Mot de passe</label>
         <input type="password" id="pwd" placeholder="••••••••" autocomplete="current-password">
@@ -33,6 +48,7 @@
       </label>
 
       <button class="btn-primary" onclick="login()">Connexion</button>
+      </div><!-- /password-form -->
     </div>
   </div>
 
@@ -41,8 +57,15 @@
 
     <div class="admin-header">
       <h1>🌿 Tableau de bord</h1>
-      <button class="btn-secondary" onclick="logout()" style="padding:8px 18px; font-size:0.85rem">Déconnexion</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-secondary" id="bio-toggle" onclick="toggleBiometrics()"
+                style="padding:8px 16px;font-size:0.85rem;display:none">👤 Activer Face ID</button>
+        <button class="btn-secondary" onclick="logout()" style="padding:8px 18px; font-size:0.85rem">Déconnexion</button>
+      </div>
     </div>
+
+    <div id="bio-msg" style="display:none;margin-bottom:18px;padding:12px 16px;border-radius:10px;
+         font-size:0.9rem;font-weight:600"></div>
 
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('tab-planning', this)">📅 Planning</button>
@@ -120,7 +143,133 @@
 
   <script>
     const STORAGE_KEY = 'bloczen-admin';
+    const BIO_KEY     = 'bloczen-bio';     // identifiant de l'empreinte/visage enregistré
     let adminPassword = '';
+
+    // ── Face ID / Empreinte (WebAuthn) ────────────────
+    const b64 = {
+      enc: buf => btoa(String.fromCharCode(...new Uint8Array(buf))),
+      dec: str => Uint8Array.from(atob(str), c => c.charCodeAt(0))
+    };
+
+    const bioSaved = () => { try { return localStorage.getItem(BIO_KEY); } catch { return null; } };
+
+    async function bioAvailable() {
+      if (!window.PublicKeyCredential || !window.isSecureContext) return false;
+      try { return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); }
+      catch { return false; }
+    }
+
+    // Enregistre le visage/l'empreinte de l'appareil
+    async function enableBiometrics() {
+      const cred = await navigator.credentials.create({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rp: { name: 'BLOC ZEN', id: location.hostname },
+          user: {
+            id: crypto.getRandomValues(new Uint8Array(16)),
+            name: 'agnes', displayName: 'Agnès'
+          },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+          authenticatorSelection: {
+            authenticatorAttachment: 'platform',   // Face ID / Touch ID de l'appareil
+            userVerification: 'required'
+          },
+          timeout: 60000,
+          attestation: 'none'
+        }
+      });
+      if (!cred) throw new Error('Annulé');
+      localStorage.setItem(BIO_KEY, b64.enc(cred.rawId));
+    }
+
+    // Demande le visage/l'empreinte pour déverrouiller
+    async function verifyBiometrics() {
+      const id = bioSaved();
+      if (!id) return false;
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          allowCredentials: [{ type: 'public-key', id: b64.dec(id) }],
+          userVerification: 'required',
+          timeout: 60000
+        }
+      });
+      return !!assertion;
+    }
+
+    async function unlockWithBiometrics() {
+      const btn = document.getElementById('bio-unlock-btn');
+      const err = document.getElementById('login-error');
+      err.style.display = 'none';
+      btn.disabled = true;
+      try {
+        const ok = await verifyBiometrics();
+        if (!ok) throw new Error('Échec');
+        let saved = null;
+        try { saved = localStorage.getItem(STORAGE_KEY); } catch {}
+        if (!saved) { showPasswordForm(); return; }
+        adminPassword = saved;
+        loadPlanning();
+      } catch {
+        err.textContent = 'Déverrouillage annulé ou échoué.';
+        err.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function showPasswordForm() {
+      document.getElementById('bio-unlock').style.display = 'none';
+      document.getElementById('password-form').style.display = 'block';
+      document.getElementById('login-sub').textContent = 'Entre ton mot de passe pour continuer.';
+    }
+
+    function showBioUnlock() {
+      document.getElementById('bio-unlock').style.display = 'block';
+      document.getElementById('password-form').style.display = 'none';
+      document.getElementById('login-sub').textContent = 'Déverrouille avec ton visage ou ton empreinte.';
+    }
+
+    // Bouton Activer / Désactiver dans le tableau de bord
+    async function toggleBiometrics() {
+      const btn = document.getElementById('bio-toggle');
+      const msg = document.getElementById('bio-msg');
+      const show = (text, good) => {
+        msg.textContent = text;
+        msg.style.background = good ? '#e4f2e9' : '#fdecea';
+        msg.style.color      = good ? 'var(--success)' : 'var(--error)';
+        msg.style.display = 'block';
+        setTimeout(() => { msg.style.display = 'none'; }, 4000);
+      };
+
+      if (bioSaved()) {                       // déjà activé -> on désactive
+        localStorage.removeItem(BIO_KEY);
+        refreshBioButton();
+        show('Face ID désactivé.', true);
+        return;
+      }
+
+      btn.disabled = true;
+      try {
+        await enableBiometrics();
+        // On s'assure que le mot de passe est bien mémorisé, sinon le déverrouillage n'aurait rien à ouvrir
+        try { localStorage.setItem(STORAGE_KEY, adminPassword); } catch {}
+        refreshBioButton();
+        show('✅ Face ID activé — plus besoin du mot de passe.', true);
+      } catch {
+        show('Activation annulée.', false);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function refreshBioButton() {
+      const btn = document.getElementById('bio-toggle');
+      if (!await bioAvailable()) { btn.style.display = 'none'; return; }
+      btn.style.display = 'inline-block';
+      btn.textContent = bioSaved() ? '👤 Désactiver Face ID' : '👤 Activer Face ID';
+    }
 
     // ── Auth ─────────────────────────────────────────
     function login() {
@@ -137,23 +286,35 @@
 
     function logout() {
       adminPassword = '';
-      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      forgetSaved();
       document.getElementById('admin-section').classList.add('hidden');
       document.getElementById('login-section').classList.remove('hidden');
       document.getElementById('pwd').value = '';
+      showPasswordForm();
     }
 
+    // Efface le mot de passe mémorisé ET le Face ID (qui n'aurait plus rien à déverrouiller)
     function forgetSaved() {
-      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(BIO_KEY);
+      } catch {}
     }
 
-    // Reconnecte automatiquement si le mot de passe a été mémorisé
+    // Au chargement : Face ID > reconnexion auto > formulaire mot de passe
     function tryAutoLogin() {
       let saved = null;
       try { saved = localStorage.getItem(STORAGE_KEY); } catch {}
-      if (!saved) return;
-      adminPassword = saved;
-      loadPlanning();   // si le mot de passe n'est plus bon, un 401 le supprimera
+
+      if (!saved) { showPasswordForm(); return; }
+
+      if (bioSaved()) {          // Face ID activé -> on demande le visage/l'empreinte
+        showBioUnlock();
+        return;
+      }
+
+      adminPassword = saved;     // sinon reconnexion directe
+      loadPlanning();            // si le mot de passe n'est plus bon, un 401 le supprimera
     }
 
     function authHeaders() {
@@ -181,6 +342,8 @@
           // Mot de passe refusé : on oublie celui qui était mémorisé
           forgetSaved();
           adminPassword = '';
+          showPasswordForm();
+          document.getElementById('login-error').textContent = 'Mot de passe incorrect.';
           document.getElementById('login-error').style.display = 'block';
           document.getElementById('login-section').classList.remove('hidden');
           document.getElementById('admin-section').classList.add('hidden');
@@ -198,6 +361,7 @@
         document.getElementById('login-error').style.display = 'none';
         document.getElementById('login-section').classList.add('hidden');
         document.getElementById('admin-section').classList.remove('hidden');
+        refreshBioButton();
 
         const data = await res.json();
         renderPlanning(data.slots || []);
