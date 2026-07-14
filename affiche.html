@@ -19,8 +19,7 @@
     }
 
     .no-print {
-      max-width: 210mm;
-      width: 100%;
+      max-width: 210mm; width: 100%;
       background: #fdfaf6;
       border: 1.5px solid #d8d0c4;
       border-radius: 14px;
@@ -31,191 +30,100 @@
     }
     .no-print h2 { font-family: 'Lora', serif; font-size: 1.1rem; margin-bottom: 8px; }
     .no-print button {
-      margin-top: 12px;
-      padding: 12px 26px;
-      background: #6a9478;
-      color: #fff;
-      border: none;
-      border-radius: 12px;
+      margin-top: 12px; padding: 12px 26px;
+      background: #6a9478; color: #fff;
+      border: none; border-radius: 12px;
       font-family: 'Nunito', sans-serif;
-      font-size: 1rem;
-      font-weight: 800;
-      cursor: pointer;
+      font-size: 1rem; font-weight: 800; cursor: pointer;
     }
     .no-print button:hover { background: #557a62; }
 
-    /* ── L'AFFICHE (A4) ── */
+    /* ── AFFICHE A4 ── */
     .poster {
-      width: 210mm;
-      height: 297mm;
-      background: linear-gradient(170deg, #f0f6f2 0%, #fdfaf6 45%, #f5ede4 100%);
+      width: 210mm; height: 297mm;
+      background: linear-gradient(175deg, #f1f7f3 0%, #fdfaf6 55%, #f6efe7 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      padding: 20mm 16mm 14mm;
+      justify-content: center;
+      gap: 12mm;
+      padding: 24mm 18mm;
       text-align: center;
-      position: relative;
-      overflow: hidden;
       box-shadow: 0 8px 40px rgba(80,100,70,0.18);
     }
 
-    .poster::before {
-      content: '';
-      position: absolute;
-      top: -60mm; left: 50%;
-      transform: translateX(-50%);
-      width: 200mm; height: 200mm;
-      background: radial-gradient(circle, rgba(106,148,120,0.10) 0%, transparent 65%);
-    }
-
-    .p-top { position: relative; }
-
-    .p-leaf { font-size: 40pt; display: block; margin-bottom: 6mm; }
+    .p-leaf { font-size: 34pt; }
 
     .p-title {
       font-family: 'Lora', serif;
-      font-size: 44pt;
+      font-size: 46pt;
       font-weight: 600;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.07em;
       line-height: 1;
-      margin-bottom: 3mm;
+      margin-bottom: 4mm;
     }
     .p-title em { color: #6a9478; font-style: italic; }
 
     .p-tagline {
       font-family: 'Lora', serif;
       font-style: italic;
-      font-size: 16pt;
+      font-size: 17pt;
       color: #7a8f7c;
-      margin-bottom: 7mm;
-    }
-
-    .p-divider {
-      width: 20mm; height: 2px;
-      background: #c5845a;
-      border-radius: 2px;
-      margin: 0 auto 7mm;
-      opacity: 0.6;
-    }
-
-    .p-acronym {
-      display: flex;
-      justify-content: center;
-      gap: 3mm;
-      margin-bottom: 6mm;
-    }
-    .p-acro-item {
-      background: #fff;
-      border: 1.5px solid #d8d0c4;
-      border-radius: 4mm;
-      padding: 3mm 2mm;
-      width: 26mm;
-    }
-    .p-acro-letter {
-      display: block;
-      font-family: 'Lora', serif;
-      font-size: 20pt;
-      font-weight: 600;
-      color: #6a9478;
-      line-height: 1;
-    }
-    .p-acro-word {
-      display: block;
-      font-size: 6.5pt;
-      color: #7a8f7c;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      margin-top: 1.5mm;
     }
 
     .p-pitch {
-      font-size: 13pt;
-      line-height: 1.6;
-      color: #2d3a2e;
-      max-width: 150mm;
-      margin: 0 auto;
+      font-size: 15pt;
+      line-height: 1.7;
+      max-width: 140mm;
     }
     .p-pitch strong { color: #6a9478; }
 
     /* QR */
-    .p-qr-zone { position: relative; }
-
     .p-scan {
       font-size: 12pt;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.15em;
       color: #c5845a;
-      margin-bottom: 4mm;
+      margin-bottom: 5mm;
     }
-
     .p-qr-box {
       background: #fff;
-      border-radius: 7mm;
-      padding: 6mm;
-      box-shadow: 0 6px 28px rgba(80,100,70,0.18);
-      display: inline-block;
       border: 1.5px solid #e4ded3;
+      border-radius: 6mm;
+      padding: 5mm;
+      display: inline-block;
+      box-shadow: 0 6px 24px rgba(80,100,70,0.14);
     }
-
-    .p-qr-inner { position: relative; width: 62mm; height: 62mm; }
-    .p-qr-inner svg { width: 62mm; height: 62mm; display: block; }
-
-    /* Photo d'Agnes au centre du QR */
-    .p-qr-face {
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 17mm; height: 17mm;
-      background: #fff;
-      border-radius: 50%;
-      padding: 1.6mm;
-      box-shadow: 0 2px 8px rgba(80,100,70,0.20);
-    }
-    .p-qr-face img {
-      width: 100%; height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-      display: block;
-      border: 1.2mm solid #6a9478;
-    }
-
+    .p-qr-box svg { width: 64mm; height: 64mm; display: block; }
     .p-url {
       margin-top: 4mm;
       font-size: 12pt;
       font-weight: 800;
       color: #6a9478;
-      letter-spacing: 0.02em;
     }
 
-    /* Infos bas */
     .p-infos {
       display: flex;
       justify-content: center;
       gap: 4mm;
-      margin-bottom: 5mm;
-      position: relative;
     }
     .p-badge {
       background: #e8f0ea;
       color: #6a9478;
       border-radius: 20mm;
-      padding: 2.5mm 6mm;
-      font-size: 10pt;
+      padding: 3mm 7mm;
+      font-size: 11pt;
       font-weight: 700;
     }
 
     .p-signature {
-      position: relative;
-      font-size: 10.5pt;
+      font-size: 11pt;
       color: #7a8f7c;
       line-height: 1.6;
     }
-    .p-signature strong { color: #2d3a2e; font-size: 11.5pt; }
+    .p-signature strong { color: #2d3a2e; font-size: 12pt; }
 
-    /* ── IMPRESSION ── */
     @page { size: A4; margin: 0; }
 
     @media print {
@@ -223,9 +131,6 @@
       .no-print { display: none !important; }
       .poster {
         box-shadow: none;
-        width: 210mm;
-        height: 297mm;
-        page-break-after: avoid;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
@@ -237,56 +142,41 @@
   <div class="no-print">
     <h2>🖨️ Affiche prête à imprimer</h2>
     <p>Format A4. Clique sur le bouton, puis choisis <strong>« Enregistrer en PDF »</strong> ou imprime directement.<br>
-    Pense à activer <strong>« Graphiques d'arrière-plan »</strong> dans les options d'impression pour garder les couleurs.</p>
+    ⚠️ Pense à cocher <strong>« Graphiques d'arrière-plan »</strong> dans les options, sinon les couleurs ne sortent pas.</p>
     <button onclick="window.print()">Imprimer / Enregistrer en PDF</button>
   </div>
 
   <div class="poster">
 
-    <div class="p-top">
-      <span class="p-leaf">🌿</span>
+    <div>
+      <div class="p-leaf">🌿</div>
       <h1 class="p-title">B.L.O.C <em>ZEN</em></h1>
       <p class="p-tagline">Pause détente au bloc</p>
-      <div class="p-divider"></div>
-
-      <div class="p-acronym">
-        <div class="p-acro-item"><span class="p-acro-letter">B</span><span class="p-acro-word">Bien-être</span></div>
-        <div class="p-acro-item"><span class="p-acro-letter">L</span><span class="p-acro-word">Lâcher prise</span></div>
-        <div class="p-acro-item"><span class="p-acro-letter">O</span><span class="p-acro-word">Off</span></div>
-        <div class="p-acro-item"><span class="p-acro-letter">C</span><span class="p-acro-word">Calme</span></div>
-      </div>
-
-      <p class="p-pitch">
-        Entre deux blocs et trois cafés froids, on oublie parfois de souffler…<br>
-        Je te propose <strong>20 minutes de relaxation douce</strong> par pressions manuelles.<br>
-        Tête, épaules, mains, pieds, dos… <strong>tu choisis, je m'occupe du reste.</strong>
-      </p>
     </div>
 
-    <div class="p-qr-zone">
-      <div class="p-scan">📷 Scanne pour réserver</div>
+    <p class="p-pitch">
+      <strong>20 minutes de relaxation</strong>, rien que pour toi.<br>
+      Tête, épaules, mains, pieds, dos…<br>
+      Tu choisis, je m'occupe du reste.
+    </p>
+
+    <div>
+      <div class="p-scan">Scanne pour réserver</div>
       <div class="p-qr-box">
-        <div class="p-qr-inner">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" shape-rendering="crispEdges"><path stroke="#3f6b52" d="M4 4.5h7m2 0h2m3 0h1m8 0h2m1 0h7M4 5.5h1m5 0h1m2 0h2m1 0h6m1 0h5m2 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m2 0h1m1 0h1m2 0h1m2 0h1m1 0h1m2 0h2m2 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m2 0h2m1 0h2m2 0h1m1 0h1m1 0h1m2 0h2m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h2m2 0h5m3 0h2m1 0h2m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m2 0h5m1 0h1m1 0h2m1 0h2m1 0h1m2 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h2m2 0h1m1 0h3m2 0h1m4 0h1M6 12.5h2m2 0h6m1 0h1m1 0h1m2 0h2m1 0h1m1 0h1m1 0h2m1 0h1M4 13.5h3m2 0h1m5 0h2m1 0h2m1 0h1m1 0h1m1 0h1m1 0h4m2 0h2m1 0h1M4 14.5h1m3 0h1m1 0h1m1 0h3m2 0h1m2 0h1m1 0h3m2 0h2m1 0h1m4 0h2M4 15.5h1m1 0h2m1 0h1m1 0h1m1 0h1m3 0h1m1 0h2m2 0h1m6 0h4m1 0h2M4 16.5h1m1 0h1m1 0h1m1 0h2m1 0h3m1 0h1m1 0h3m2 0h2m1 0h3m3 0h1M6 17.5h3m2 0h1m1 0h1m1 0h1m3 0h1m1 0h3m1 0h2m1 0h2m3 0h1M4 18.5h1m4 0h3m1 0h2m1 0h4m3 0h1m1 0h1m2 0h5M6 19.5h2m1 0h1m2 0h1m1 0h2m2 0h1m2 0h3m1 0h2m2 0h1m1 0h1m2 0h3M4 20.5h1m1 0h3m1 0h1m1 0h1m1 0h2m3 0h1m2 0h1m2 0h1m1 0h4m1 0h2M5 21.5h5m1 0h5m1 0h2m1 0h1m2 0h5m1 0h4m1 0h1m1 0h1M5 22.5h2m2 0h2m3 0h2m3 0h3m1 0h2m1 0h1m2 0h3m2 0h2M4 23.5h1m3 0h1m3 0h4m1 0h1m2 0h2m2 0h1m6 0h2m3 0h1M6 24.5h1m1 0h4m2 0h1m1 0h1m3 0h1m1 0h1m1 0h2m2 0h1m1 0h1m2 0h3M4 25.5h2m2 0h1m2 0h1m1 0h3m2 0h2m2 0h1m1 0h2m2 0h1m4 0h1m2 0h1M9 26.5h4m1 0h1m1 0h1m1 0h2m3 0h1m3 0h2m1 0h4m1 0h2M5 27.5h5m2 0h2m2 0h1m1 0h2m3 0h1m5 0h1m1 0h1m1 0h1m1 0h2M4 28.5h1m1 0h1m1 0h1m1 0h1m2 0h2m2 0h4m1 0h1m1 0h1m1 0h1m1 0h5m2 0h2M12 29.5h2m1 0h1m1 0h1m3 0h1m2 0h3m1 0h1m3 0h1M4 30.5h7m1 0h4m2 0h4m1 0h3m1 0h2m1 0h1m1 0h1M4 31.5h1m5 0h1m3 0h1m3 0h1m1 0h1m1 0h2m3 0h2m3 0h5M4 32.5h1m1 0h3m1 0h1m2 0h2m2 0h4m2 0h2m1 0h10M4 33.5h1m1 0h3m1 0h1m1 0h3m1 0h4m2 0h2m1 0h2m1 0h1m2 0h1m1 0h2M4 34.5h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h1m1 0h2m2 0h1m2 0h5M4 35.5h1m5 0h1m2 0h1m1 0h1m2 0h1m7 0h3m5 0h1m1 0h1M4 36.5h7m3 0h2m1 0h2m3 0h4m1 0h1m1 0h4"/></svg>
-          <div class="p-qr-face">
-            <img src="agnes.jpg" alt="Agnès">
-          </div>
-        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" shape-rendering="crispEdges"><path stroke="#3f6b52" d="M4 4.5h7m2 0h2m3 0h1m8 0h2m1 0h7M4 5.5h1m5 0h1m2 0h2m1 0h6m1 0h5m2 0h1m5 0h1M4 6.5h1m1 0h3m1 0h1m2 0h1m1 0h1m2 0h1m2 0h1m1 0h1m2 0h2m2 0h1m1 0h3m1 0h1M4 7.5h1m1 0h3m1 0h1m2 0h2m1 0h2m2 0h1m1 0h1m1 0h1m2 0h2m1 0h1m1 0h3m1 0h1M4 8.5h1m1 0h3m1 0h1m1 0h2m2 0h5m3 0h2m1 0h2m1 0h1m1 0h3m1 0h1M4 9.5h1m5 0h1m2 0h5m1 0h1m1 0h2m1 0h2m1 0h1m2 0h1m5 0h1M4 10.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M12 11.5h2m2 0h1m1 0h3m2 0h1m4 0h1M6 12.5h2m2 0h6m1 0h1m1 0h1m2 0h2m1 0h1m1 0h1m1 0h2m1 0h1M4 13.5h3m2 0h1m5 0h2m1 0h2m1 0h1m1 0h1m1 0h1m1 0h4m2 0h2m1 0h1M4 14.5h1m3 0h1m1 0h1m1 0h3m2 0h1m2 0h1m1 0h3m2 0h2m1 0h1m4 0h2M4 15.5h1m1 0h2m1 0h1m1 0h1m1 0h1m3 0h1m1 0h2m2 0h1m6 0h4m1 0h2M4 16.5h1m1 0h1m1 0h1m1 0h2m1 0h3m1 0h1m1 0h3m2 0h2m1 0h3m3 0h1M6 17.5h3m2 0h1m1 0h1m1 0h1m3 0h1m1 0h3m1 0h2m1 0h2m3 0h1M4 18.5h1m4 0h3m1 0h2m1 0h4m3 0h1m1 0h1m2 0h5M6 19.5h2m1 0h1m2 0h1m1 0h2m2 0h1m2 0h3m1 0h2m2 0h1m1 0h1m2 0h3M4 20.5h1m1 0h3m1 0h1m1 0h1m1 0h2m3 0h1m2 0h1m2 0h1m1 0h4m1 0h2M5 21.5h5m1 0h5m1 0h2m1 0h1m2 0h5m1 0h4m1 0h1m1 0h1M5 22.5h2m2 0h2m3 0h2m3 0h3m1 0h2m1 0h1m2 0h3m2 0h2M4 23.5h1m3 0h1m3 0h4m1 0h1m2 0h2m2 0h1m6 0h2m3 0h1M6 24.5h1m1 0h4m2 0h1m1 0h1m3 0h1m1 0h1m1 0h2m2 0h1m1 0h1m2 0h3M4 25.5h2m2 0h1m2 0h1m1 0h3m2 0h2m2 0h1m1 0h2m2 0h1m4 0h1m2 0h1M9 26.5h4m1 0h1m1 0h1m1 0h2m3 0h1m3 0h2m1 0h4m1 0h2M5 27.5h5m2 0h2m2 0h1m1 0h2m3 0h1m5 0h1m1 0h1m1 0h1m1 0h2M4 28.5h1m1 0h1m1 0h1m1 0h1m2 0h2m2 0h4m1 0h1m1 0h1m1 0h1m1 0h5m2 0h2M12 29.5h2m1 0h1m1 0h1m3 0h1m2 0h3m1 0h1m3 0h1M4 30.5h7m1 0h4m2 0h4m1 0h3m1 0h2m1 0h1m1 0h1M4 31.5h1m5 0h1m3 0h1m3 0h1m1 0h1m1 0h2m3 0h2m3 0h5M4 32.5h1m1 0h3m1 0h1m2 0h2m2 0h4m2 0h2m1 0h10M4 33.5h1m1 0h3m1 0h1m1 0h3m1 0h4m2 0h2m1 0h2m1 0h1m2 0h1m1 0h2M4 34.5h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h1m1 0h2m2 0h1m2 0h5M4 35.5h1m5 0h1m2 0h1m1 0h1m2 0h1m7 0h3m5 0h1m1 0h1M4 36.5h7m3 0h2m1 0h2m3 0h4m1 0h1m1 0h4"/></svg>
       </div>
       <div class="p-url">bloczen.netlify.app</div>
     </div>
 
-    <div>
-      <div class="p-infos">
-        <span class="p-badge">📍 Salle 4 — Bloc vasculaire</span>
-        <span class="p-badge">🕜 13h30 · 14h00</span>
-        <span class="p-badge">⏳ 20 min</span>
-      </div>
-      <p class="p-signature">
-        <strong>Agnès Villetorte</strong> — IADE, Bloc opératoire<br>
-        Entre collègues, sur la base du volontariat 🌿
-      </p>
+    <div class="p-infos">
+      <span class="p-badge">📍 Salle 4</span>
+      <span class="p-badge">🕜 13h30 · 14h00</span>
     </div>
+
+    <p class="p-signature">
+      <strong>Agnès Villetorte</strong> — IADE<br>
+      Entre collègues, sur la base du volontariat 🌿
+    </p>
 
   </div>
 
