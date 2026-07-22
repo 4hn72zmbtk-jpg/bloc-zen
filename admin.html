@@ -633,6 +633,12 @@
             <div>
               <span class="day-date" style="text-transform:none">${f.first_name || 'Anonyme'}</span>
               <span style="color:var(--text-muted); font-size:0.8rem; margin-left:8px">${dateLabel}</span>
+              <span style="font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;
+                    margin-left:8px;padding:2px 8px;border-radius:10px;
+                    background:${f.booking_id ? 'var(--primary-light)' : 'var(--accent-light)'};
+                    color:${f.booking_id ? 'var(--primary)' : 'var(--accent)'}">
+                ${f.booking_id ? 'après séance' : 'mot libre'}
+              </span>
               <div style="font-size:1rem; margin-top:2px">${starsFull}</div>
             </div>
             <button class="btn-delete-day" onclick="deleteAvis('${f.id}', this.closest('.day-item'))">🗑</button>
