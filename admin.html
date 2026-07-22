@@ -163,6 +163,13 @@
                style="width:100%;padding:14px 18px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
                       font-size:1rem;font-family:'Nunito',sans-serif;color:var(--text);background:var(--surface);
                       margin-bottom:8px;-webkit-appearance:none">
+        <div class="histo-sorts" id="histo-sorts">
+          <button class="sort-chip active" data-sort="fideles"  onclick="setHistoSort(this)">⭐ Plus fidèles</button>
+          <button class="sort-chip"        data-sort="recent"   onclick="setHistoSort(this)">🕐 Venus récemment</button>
+          <button class="sort-chip"        data-sort="ancien"   onclick="setHistoSort(this)">🌱 Sans nouvelles</button>
+          <button class="sort-chip"        data-sort="alpha"    onclick="setHistoSort(this)">🔤 A → Z</button>
+        </div>
+
         <div id="histo-count" style="font-size:0.8rem;color:var(--text-muted);font-weight:700;margin-bottom:12px"></div>
 
         <div id="histo-people" class="days-list"></div>
@@ -361,7 +368,41 @@
     // ── Tabs ─────────────────────────────────────────
     // ── Historique / Mini-CRM ────────────────────────
     // Tout est calculé à partir des réservations + avis déjà en base — aucune donnée supplémentaire.
-    let histoPeople = [];   // fiches construites, filtrées par la recherche
+    let histoPeople = [];        // fiches construites, filtrées par la recherche
+    let histoSort   = 'fideles'; // tri courant du carnet
+
+    function setHistoSort(btn) {
+      document.querySelectorAll('.sort-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      histoSort = btn.dataset.sort;
+      renderHistoList();
+    }
+
+    // Date de la dernière VENUE réelle (les résas à venir ne comptent pas : elle n'est pas encore passée)
+    function derniereVenue(p) {
+      return p.datesPassees.length ? [...p.datesPassees].sort().slice(-1)[0] : '';
+    }
+
+    function trierHisto(liste) {
+      const l = [...liste];
+
+      // Les deux tris par date placent toujours « jamais venue » à la fin
+      if (histoSort === 'recent' || histoSort === 'ancien') {
+        const recent = histoSort === 'recent';
+        return l.sort((a, b) => {
+          const da = derniereVenue(a), db = derniereVenue(b);
+          if (!da && !db) return 0;
+          if (!da) return 1;
+          if (!db) return -1;
+          return recent ? db.localeCompare(da) : da.localeCompare(db);
+        });
+      }
+      if (histoSort === 'alpha') {
+        return l.sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
+      }
+      // Par défaut : les plus fidèles
+      return l.sort((a, b) => b.seances - a.seances || b.aVenir - a.aVenir);
+    }
 
     async function loadHistorique() {
       document.getElementById('histo-loading').style.display = 'block';
@@ -473,12 +514,12 @@
       const q = normSearch(document.getElementById('histo-search').value.trim());
       const qTel = q.replace(/\D/g, '');
 
-      const liste = histoPeople.filter(p =>
+      const liste = trierHisto(histoPeople.filter(p =>
         !q
         || normSearch(p.nom).includes(q)
         || normSearch(p.email).includes(q)
         || (qTel && (p.phone || '').replace(/\D/g, '').includes(qTel))
-      );
+      ));
 
       document.getElementById('histo-count').textContent =
         q ? `${liste.length} résultat${liste.length > 1 ? 's' : ''} pour « ${document.getElementById('histo-search').value.trim()} »`

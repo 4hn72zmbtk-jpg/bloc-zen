@@ -521,6 +521,45 @@ footer {
 
 .days-list { display: flex; flex-direction: column; gap: 12px; }
 
+/* ─── Tris du carnet (mini-CRM) ─── */
+.histo-sorts {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.histo-sorts::-webkit-scrollbar { display: none; }
+
+.sort-chip {
+  flex-shrink: 0;
+  padding: 9px 16px;
+  min-height: 40px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sort-chip:hover { border-color: var(--primary); color: var(--primary); }
+.sort-chip:active { transform: scale(0.96); }
+
+.sort-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  box-shadow: 0 3px 12px rgba(106, 148, 120, 0.3);
+}
+
 .day-item {
   background: var(--surface);
   border-radius: var(--radius);
