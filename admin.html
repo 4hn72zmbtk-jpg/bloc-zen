@@ -71,6 +71,7 @@
       <button class="tab-btn active" onclick="switchTab('tab-planning', this)">📅 Planning</button>
       <button class="tab-btn" onclick="switchTab('tab-reservations', this)">👥 Réservations</button>
       <button class="tab-btn" onclick="switchTab('tab-avis', this)">⭐ Avis</button>
+      <button class="tab-btn" onclick="switchTab('tab-historique', this)">📊 Historique</button>
     </div>
 
     <!-- Tab 1 : Planning -->
@@ -136,6 +137,29 @@
       <div id="avis-list" class="days-list" style="display:none"></div>
       <div id="no-avis-msg" class="no-bookings" style="display:none">
         🌱 Aucun avis pour le moment.
+      </div>
+    </div>
+
+    <!-- Tab 4 : Historique -->
+    <div id="tab-historique" class="tab-content">
+      <div id="histo-loading" style="text-align:center; padding:20px; color:var(--text-muted)">
+        <span class="loading-spinner"></span>
+      </div>
+
+      <div id="histo-wrap" style="display:none">
+        <!-- Chiffres clés -->
+        <div id="histo-stats" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+             gap:12px; margin-bottom:26px"></div>
+
+        <h3 style="font-family:'Lora',serif; font-size:1.05rem; margin-bottom:6px">Qui est déjà venu</h3>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px">
+          Trié par nombre de séances. Les personnes venues plusieurs fois sont tes fidèles 🌿
+        </p>
+        <div id="histo-people" class="days-list"></div>
+      </div>
+
+      <div id="no-histo-msg" class="no-bookings" style="display:none">
+        🌱 Aucune séance enregistrée pour le moment.
       </div>
     </div>
 
@@ -325,6 +349,127 @@
     }
 
     // ── Tabs ─────────────────────────────────────────
+    // ── Historique / Statistiques ────────────────────
+    // Tout est calculé à partir des réservations déjà en base — aucune donnée supplémentaire.
+    async function loadHistorique() {
+      document.getElementById('histo-loading').style.display = 'block';
+      document.getElementById('histo-wrap').style.display = 'none';
+      document.getElementById('no-histo-msg').style.display = 'none';
+      try {
+        const res = await fetch('/api/admin-bookings', { headers: authHeaders() });
+        const data = await res.json();
+        renderHistorique(data.bookings || []);
+      } catch {
+        document.getElementById('histo-loading').style.display = 'none';
+        document.getElementById('no-histo-msg').style.display = 'block';
+      }
+    }
+
+    // Regroupe par personne : le téléphone sert de clé (plus stable que le nom)
+    function personKey(b) {
+      const tel = (b.phone || '').replace(/\D/g, '');
+      if (tel) return 'tel:' + tel;
+      const mail = (b.email || '').trim().toLowerCase();
+      if (mail) return 'mail:' + mail;
+      return 'nom:' + (b.first_name + b.last_name).toLowerCase().replace(/\s/g, '');
+    }
+
+    function renderHistorique(bookings) {
+      document.getElementById('histo-loading').style.display = 'none';
+
+      if (bookings.length === 0) {
+        document.getElementById('no-histo-msg').style.display = 'block';
+        return;
+      }
+
+      const today = new Date().toISOString().slice(0, 10);
+      const people = {};
+      let faites = 0, aVenir = 0;
+
+      bookings.forEach(b => {
+        const slot = b.available_slots || {};
+        const d = slot.slot_date || '';
+        const passee = d && d <= today;
+        passee ? faites++ : aVenir++;
+
+        const k = personKey(b);
+        if (!people[k]) {
+          people[k] = {
+            nom: `${b.first_name} ${b.last_name}`.trim(),
+            phone: b.phone, email: b.email,
+            seances: 0, aVenir: 0, dates: [], notes: []
+          };
+        }
+        const p = people[k];
+        if (passee) { p.seances++; if (d) p.dates.push(d); }
+        else p.aVenir++;
+        if (b.note) p.notes.push(b.note);
+      });
+
+      const liste = Object.values(people)
+        .sort((a, b) => b.seances - a.seances || b.aVenir - a.aVenir);
+
+      const fideles = liste.filter(p => p.seances >= 2).length;
+
+      // ── Chiffres clés ──
+      const stat = (val, label, color) => `
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px;
+             padding:16px; text-align:center; box-shadow:var(--shadow)">
+          <div style="font-family:'Lora',serif; font-size:1.9rem; color:${color}; line-height:1">${val}</div>
+          <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase;
+               letter-spacing:0.05em; color:var(--text-muted); margin-top:6px">${label}</div>
+        </div>`;
+
+      document.getElementById('histo-stats').innerHTML =
+          stat(faites, 'Séances faites', 'var(--primary)')
+        + stat(liste.length, 'Personnes', 'var(--primary)')
+        + stat(fideles, 'Revenues 2×+', 'var(--accent)')
+        + stat(aVenir, 'À venir', 'var(--text-muted)');
+
+      // ── Liste des personnes ──
+      const wrap = document.getElementById('histo-people');
+      wrap.innerHTML = '';
+      liste.forEach(p => {
+        const derniere = p.dates.length
+          ? new Date(p.dates.sort().slice(-1)[0] + 'T00:00:00')
+              .toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+          : '—';
+
+        const badgeFidele = p.seances >= 2
+          ? `<span style="font-size:0.66rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;
+                   margin-left:8px;padding:2px 8px;border-radius:10px;
+                   background:var(--accent-light);color:var(--accent)">fidèle ×${p.seances}</span>` : '';
+
+        const badgeAVenir = p.aVenir
+          ? `<span style="font-size:0.66rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;
+                   margin-left:6px;padding:2px 8px;border-radius:10px;
+                   background:var(--primary-light);color:var(--primary)">${p.aVenir} à venir</span>` : '';
+
+        const div = document.createElement('div');
+        div.className = 'day-item';
+        div.innerHTML = `
+          <div class="day-item-header" style="align-items:flex-start; margin-bottom:8px">
+            <div>
+              <span class="day-date" style="text-transform:none">${escapeHtml(p.nom)}</span>
+              ${badgeFidele}${badgeAVenir}
+              <div style="font-size:0.82rem; color:var(--text-muted); margin-top:4px">
+                ${p.seances} séance${p.seances > 1 ? 's' : ''} · dernière : ${derniere}
+              </div>
+            </div>
+          </div>
+          <div style="font-size:0.82rem; color:var(--text-muted); display:flex; gap:14px; flex-wrap:wrap">
+            ${p.phone ? `<a href="tel:${p.phone.replace(/\s/g,'')}" style="color:var(--primary);text-decoration:none;font-weight:600">📞 ${escapeHtml(p.phone)}</a>` : ''}
+            ${p.email ? `<a href="mailto:${p.email}" style="color:var(--primary);text-decoration:none;font-weight:600">✉️ ${escapeHtml(p.email)}</a>` : '<span style="color:var(--accent)">✉️ pas d\'email</span>'}
+          </div>
+          ${p.notes.length ? `<p style="font-size:0.85rem;color:var(--text-muted);font-style:italic;margin-top:10px">
+             « ${escapeHtml(p.notes[p.notes.length-1])} »</p>` : ''}
+        `;
+        wrap.appendChild(div);
+      });
+
+      document.getElementById('histo-wrap').style.display = 'block';
+    }
+
     function switchTab(tabId, btn) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -332,6 +477,7 @@
       btn.classList.add('active');
       if (tabId === 'tab-reservations') loadBookings();
       if (tabId === 'tab-avis') loadAvis();
+      if (tabId === 'tab-historique') loadHistorique();
     }
 
     // ── Planning ──────────────────────────────────────
