@@ -110,17 +110,17 @@ async function sendEmails({ firstName, lastName, phone, email, note, dateLabel, 
     await transporter.sendMail({
       from,
       to: email,
-      subject: 'BLOC ZEN — Votre réservation est confirmée',
+      subject: 'BLOC ZEN — Ta réservation est confirmée 🌿',
       html: `
         <div style="font-family:Arial,sans-serif;max-width:520px;color:#2d3a2e">
           <h2 style="color:#6a9478">🌿 Réservation confirmée !</h2>
           <p>Bonjour ${firstName},</p>
-          <p>Votre séance de relaxation est bien réservée :</p>
+          <p>Ta séance de relaxation est bien réservée :</p>
           <div style="background:#e8f0ea;border-radius:10px;padding:16px;margin:16px 0">
             <p style="margin:4px 0;text-transform:capitalize">📅 <strong>${dateLabel}</strong></p>
             <p style="margin:4px 0">🕐 <strong>${timeSlot} – ${endTime}</strong></p>
           </div>
-          <p>Si vous ne pouvez plus venir, annulez facilement ici :</p>
+          <p>Si tu ne peux plus venir, annule facilement ici :</p>
           <a href="${cancelUrl}"
              style="display:inline-block;padding:12px 24px;background:#6a9478;color:white;text-decoration:none;border-radius:10px;font-weight:bold;margin-top:8px">
             Annuler ma réservation
