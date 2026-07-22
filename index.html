@@ -410,6 +410,9 @@
       margin-bottom: 18px;
     }
 
+    /* Le formulaire n'a plus de sous-titre : on garde l'air avant les étoiles */
+    #leave-form-wrap h2 { margin-bottom: 20px; }
+
     .leave-stars {
       display: flex;
       justify-content: center;
@@ -600,8 +603,8 @@
 
   <!-- ── Témoignages (affichés seulement si avis publics) ── -->
   <section id="testimonials" class="testimonials-section" style="display:none">
-    <h2 class="testimonials-title">Leurs petits mots 🌿</h2>
-    <p class="testimonials-sub">Ce que mes collègues en ont pensé après leur pause</p>
+    <h2 class="testimonials-title">Leurs petits mots 💚</h2>
+    <p class="testimonials-sub">Ce que vous en avez pensé</p>
     <div id="testimonials-list" class="testimonials-list"></div>
   </section>
 
@@ -611,7 +614,6 @@
 
       <div id="leave-form-wrap">
         <h2>Tu as testé ? Laisse-moi un mot 🌿</h2>
-        <p class="leave-sub">Ça reste entre nous — Agnès seule le voit.</p>
 
         <div class="leave-stars" id="leave-stars">
           <span class="leave-star" data-v="1">⭐</span>
