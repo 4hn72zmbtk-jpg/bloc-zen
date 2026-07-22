@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BLOC ZEN — Admin</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -64,7 +65,7 @@
       </div>
     </div>
 
-    <div id="bio-msg" style="display:none;margin-bottom:18px;padding:12px 16px;border-radius:10px;
+    <div id="bio-msg" style="display:none;margin-bottom:18px;padding:12px 16px;border-radius:var(--radius-sm);
          font-size:0.9rem;font-weight:600"></div>
 
     <div class="tabs">
@@ -413,7 +414,7 @@
 
       // ── Chiffres clés ──
       const stat = (val, label, color) => `
-        <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px;
+        <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
              padding:16px; text-align:center; box-shadow:var(--shadow)">
           <div style="font-family:'Lora',serif; font-size:1.9rem; color:${color}; line-height:1">${val}</div>
           <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase;
@@ -437,12 +438,12 @@
 
         const badgeFidele = p.seances >= 2
           ? `<span style="font-size:0.66rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;
-                   margin-left:8px;padding:2px 8px;border-radius:10px;
+                   margin-left:8px;padding:2px 8px;border-radius:var(--radius-sm);
                    background:var(--accent-light);color:var(--accent)">fidèle ×${p.seances}</span>` : '';
 
         const badgeAVenir = p.aVenir
           ? `<span style="font-size:0.66rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;
-                   margin-left:6px;padding:2px 8px;border-radius:10px;
+                   margin-left:6px;padding:2px 8px;border-radius:var(--radius-sm);
                    background:var(--primary-light);color:var(--primary)">${p.aVenir} à venir</span>` : '';
 
         const div = document.createElement('div');
@@ -706,7 +707,7 @@
           <td>${b.first_name}</td>
           <td>${b.last_name}</td>
           <td>${b.phone}</td>
-          <td style="font-style:italic;color:#7a8f7c;font-size:13px">${b.note || '—'}</td>
+          <td style="font-style:italic;color:var(--text-muted);font-size:13px">${b.note || '—'}</td>
           <td>
             <button class="btn-cancel-booking" onclick="cancelBooking('${b.id}', '${b.slot_id}', this)">
               Annuler
@@ -780,7 +781,7 @@
               <span class="day-date" style="text-transform:none">${f.first_name || 'Anonyme'}</span>
               <span style="color:var(--text-muted); font-size:0.8rem; margin-left:8px">${dateLabel}</span>
               <span style="font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;
-                    margin-left:8px;padding:2px 8px;border-radius:10px;
+                    margin-left:8px;padding:2px 8px;border-radius:var(--radius-sm);
                     background:${f.booking_id ? 'var(--primary-light)' : 'var(--accent-light)'};
                     color:${f.booking_id ? 'var(--primary)' : 'var(--accent)'}">
                 ${f.booking_id ? 'après séance' : 'mot libre'}

@@ -42,16 +42,28 @@ exports.handler = async () => {
           to: b.email,
           subject: 'BLOC ZEN — Alors, cette petite pause ? 🌿',
           html: `
-            <div style="font-family:Arial,sans-serif;max-width:520px;color:#2d3a2e">
-              <h2 style="color:#6a9478">🌿 Alors, cette pause ?</h2>
-              <p>Bonjour ${b.first_name},</p>
-              <p>J'espère que ta séance de relaxation t'a fait du bien 😊</p>
-              <p>Ça me ferait super plaisir d'avoir ton petit retour — c'est rapide et ça reste entre nous :</p>
-              <a href="${feedbackUrl}"
-                 style="display:inline-block;padding:12px 24px;background:#6a9478;color:white;text-decoration:none;border-radius:10px;font-weight:bold;margin-top:8px">
-                Donner mon avis
-              </a>
-              <p style="margin-top:28px;color:#7a8f7c;font-size:13px">Merci 🌿<br>Agnès — BLOC ZEN</p>
+            <div style="background:#f4f1ea;padding:28px 16px;font-family:Arial,Helvetica,sans-serif">
+              <div style="max-width:520px;margin:0 auto;background:#fdfaf6;border:1px solid #d8d0c4;border-radius:16px;padding:32px 28px;color:#2d3a2e">
+                <div style="text-align:center;margin-bottom:22px">
+                  <div style="font-size:30px;line-height:1">🌿</div>
+                  <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;letter-spacing:2px;color:#6a9478;margin-top:6px">
+                    B.L.O.C <em style="color:#c5845a">ZEN</em>
+                  </div>
+                </div>
+                <h2 style="font-family:Georgia,serif;color:#2d3a2e;font-size:19px;margin:0 0 12px;text-align:center">Alors, cette pause ?</h2>
+                <p style="text-align:center;margin:0 0 6px">Bonjour ${b.first_name},</p>
+                <p style="text-align:center;margin:0 0 18px">J'espère que ta séance t'a fait du bien 😊<br>
+                Ton petit mot me ferait très plaisir — c'est rapide :</p>
+                <div style="text-align:center">
+                  <a href="${feedbackUrl}"
+                     style="display:inline-block;padding:13px 26px;background:#6a9478;color:white;text-decoration:none;border-radius:16px;font-weight:bold">
+                    Laisser mon petit mot 💚
+                  </a>
+                </div>
+                <p style="margin:28px 0 0;color:#5e7361;font-size:13px;text-align:center">
+                  Merci 🌿<br>— Agnès
+                </p>
+              </div>
             </div>
           `
         });

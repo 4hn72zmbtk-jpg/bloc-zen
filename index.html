@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>B.L.O.C ZEN — Pause détente au bloc</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
   <link rel="stylesheet" href="style.css">
   <style>
 
@@ -80,7 +81,7 @@
     .acronym-item {
       background: var(--surface);
       border: 1.5px solid var(--border);
-      border-radius: 14px;
+      border-radius: var(--radius);
       padding: 12px 8px;
       text-align: center;
       flex: 1;
@@ -129,7 +130,7 @@
 
     .agnes-card {
       background: var(--surface);
-      border-radius: 24px;
+      border-radius: var(--radius-lg);
       box-shadow: var(--shadow-lg);
       border: 1px solid rgba(216, 208, 196, 0.7);
       overflow: hidden;
@@ -236,7 +237,7 @@
       align-items: center;
       gap: 6px;
       background: var(--primary-light);
-      border-radius: 20px;
+      border-radius: var(--radius-lg);
       padding: 6px 14px;
       font-size: 0.82rem;
       font-weight: 700;
@@ -391,7 +392,7 @@
     .leave-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 20px;
+      border-radius: var(--radius-lg);
       padding: 26px 24px;
       box-shadow: var(--shadow);
       text-align: center;
@@ -421,7 +422,8 @@
     }
 
     .leave-star {
-      font-size: 1.9rem;
+      font-size: 2.2rem;
+      padding: 4px;                 /* zone tactile ≥ 44px */
       cursor: pointer;
       filter: grayscale(1) opacity(0.35);
       transition: transform 0.15s, filter 0.15s;
@@ -436,8 +438,8 @@
       width: 100%;
       padding: 13px 16px;
       border: 1.5px solid var(--border);
-      border-radius: 10px;
-      font-size: 0.95rem;
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
       font-family: 'Nunito', sans-serif;
       color: var(--text);
       background: var(--bg);
@@ -488,7 +490,7 @@
     .testimonial-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: var(--radius);
       padding: 18px 20px;
       box-shadow: var(--shadow);
     }
@@ -631,7 +633,7 @@
         <input type="text" id="leave-website" class="leave-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
 
         <div id="leave-error" style="display:none;color:var(--error);font-size:0.88rem;font-weight:600;
-             margin-bottom:12px;padding:10px 14px;background:#fdecea;border-radius:10px"></div>
+             margin-bottom:12px;padding:10px 14px;background:#fdecea;border-radius:var(--radius-sm)"></div>
 
         <button class="btn-primary" id="leave-btn" onclick="submitLeave()">Envoyer mon mot 🌿</button>
       </div>
@@ -660,13 +662,11 @@
       <div class="progress-dot active" id="dot-1"></div>
       <div class="progress-line"></div>
       <div class="progress-dot" id="dot-2"></div>
-      <div class="progress-line"></div>
-      <div class="progress-dot" id="dot-3"></div>
     </div>
 
-    <!-- Étape 1 : date -->
+    <!-- Étape 1 : date + horaire sur un seul écran -->
     <div class="step" id="step-date">
-      <h2 class="step-title"><span class="step-num">1</span> Choisis une date</h2>
+      <h2 class="step-title"><span class="step-num">1</span> Choisis ton créneau</h2>
       <div id="dates-loading" style="text-align:center; padding:32px; color:var(--text-muted)">
         <span class="loading-spinner"></span>
       </div>
@@ -678,18 +678,10 @@
       </div>
     </div>
 
-    <!-- Étape 2 : horaire -->
-    <div class="step hidden" id="step-slot">
-      <button class="btn-back" onclick="goToStep('step-date', 'step-slot'); setProgress(1)">← Retour</button>
-      <h2 class="step-title"><span class="step-num">2</span> Choisis un horaire</h2>
-      <span id="selected-date-label" class="selected-label"></span>
-      <div id="slots-container" class="slots-grid"></div>
-    </div>
-
-    <!-- Étape 3 : formulaire -->
+    <!-- Étape 2 : formulaire -->
     <div class="step hidden" id="step-form">
-      <button class="btn-back" onclick="goToStep('step-slot', 'step-form'); setProgress(2)">← Retour</button>
-      <h2 class="step-title"><span class="step-num">3</span> Tes informations</h2>
+      <button class="btn-back" onclick="goToStep('step-date', 'step-form'); setProgress(1)">← Retour</button>
+      <h2 class="step-title"><span class="step-num">2</span> Tes informations</h2>
       <span id="selected-slot-label" class="selected-label"></span>
 
       <form id="booking-form" novalidate>
@@ -712,11 +704,11 @@
         <div class="form-group">
           <label for="note">Un mot pour Agnès <span style="font-weight:400;text-transform:none;letter-spacing:0">(facultatif)</span></label>
           <textarea id="note" rows="3" placeholder="Ex : j'ai mal aux épaules… ou juste : merci ! 🌿"
-            style="width:100%;padding:14px 18px;border:1.5px solid var(--border);border-radius:10px;font-size:0.95rem;font-family:'Nunito',sans-serif;color:var(--text);background:var(--surface);resize:vertical;transition:border-color 0.2s,box-shadow 0.2s;line-height:1.6"
+            style="width:100%;padding:14px 18px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:1rem;font-family:'Nunito',sans-serif;color:var(--text);background:var(--surface);resize:vertical;transition:border-color 0.2s,box-shadow 0.2s;line-height:1.6"
             onfocus="this.style.borderColor='var(--primary)';this.style.boxShadow='0 0 0 4px rgba(106,148,120,0.12)'"
             onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'"></textarea>
         </div>
-        <div id="booking-error" style="display:none;color:var(--error);font-size:0.88rem;font-weight:600;margin-bottom:14px;padding:12px 16px;background:#fdecea;border-radius:10px;"></div>
+        <div id="booking-error" style="display:none;color:var(--error);font-size:0.88rem;font-weight:600;margin-bottom:14px;padding:12px 16px;background:#fdecea;border-radius:var(--radius-sm);"></div>
         <button type="submit" class="btn-primary" id="submit-btn">Confirmer ma réservation 🌿</button>
       </form>
     </div>
@@ -750,15 +742,14 @@
   </footer>
 
   <script>
-    const ALL_STEPS = ['step-date', 'step-slot', 'step-form', 'step-confirm'];
+    const ALL_STEPS = ['step-date', 'step-form', 'step-confirm'];
     let availableSlots = [];
     let selectedSlot = null;
 
     function setProgress(step) {
       document.getElementById('dot-1').className = 'progress-dot' + (step === 1 ? ' active' : ' done');
-      document.getElementById('dot-2').className = 'progress-dot' + (step === 2 ? ' active' : step > 2 ? ' done' : '');
-      document.getElementById('dot-3').className = 'progress-dot' + (step === 3 ? ' active' : '');
-      document.getElementById('progress-bar').style.display = step === 4 ? 'none' : 'flex';
+      document.getElementById('dot-2').className = 'progress-dot' + (step === 2 ? ' active' : '');
+      document.getElementById('progress-bar').style.display = step === 3 ? 'none' : 'flex';
     }
 
     function showOnly(id) {
@@ -815,38 +806,22 @@
       container.innerHTML = '';
       container.style.display = 'flex';
       dates.forEach(date => {
-        const slots = dateMap[date];
-        const count = slots.length;
-        const btn = document.createElement('button');
-        btn.className = 'date-card';
-        btn.innerHTML = `
-          <span class="date-day">${formatDate(date)}</span>
-          <span class="date-slots-badge">${count} créneau${count > 1 ? 'x' : ''} libre${count > 1 ? 's' : ''}</span>
-        `;
-        btn.onclick = () => { selectDate(date, slots); setProgress(2); };
-        container.appendChild(btn);
+        const slots = [...dateMap[date]].sort((a, b) => a.time_slot.localeCompare(b.time_slot));
+        const card = document.createElement('div');
+        card.className = 'date-group';
+        card.innerHTML = `<span class="date-day">${formatDate(date)}</span><div class="date-times"></div>`;
+        const times = card.querySelector('.date-times');
+        slots.forEach(slot => {
+          const end = addMinutes(slot.time_slot, 20);
+          const chip = document.createElement('button');
+          chip.className = 'time-chip';
+          chip.type = 'button';
+          chip.innerHTML = `${slot.time_slot} <span class="time-chip-end">– ${end}</span>`;
+          chip.onclick = () => { selectSlot(slot); setProgress(2); };
+          times.appendChild(chip);
+        });
+        container.appendChild(card);
       });
-    }
-
-    function selectDate(date, slots) {
-      document.getElementById('selected-date-label').textContent = formatDate(date);
-      const container = document.getElementById('slots-container');
-      container.innerHTML = '';
-      [...slots].sort((a, b) => a.time_slot.localeCompare(b.time_slot)).forEach(slot => {
-        const end = addMinutes(slot.time_slot, 20);
-        const btn = document.createElement('button');
-        btn.className = 'slot-card';
-        btn.innerHTML = `
-          <span class="slot-time">${slot.time_slot} – ${end}</span>
-          <span class="slot-info">
-            <span class="slot-duration">20 min</span>
-            <span class="slot-desc">Séance de relaxation</span>
-          </span>
-        `;
-        btn.onclick = () => { selectSlot(slot); setProgress(3); };
-        container.appendChild(btn);
-      });
-      showOnly('step-slot');
     }
 
     function selectSlot(slot) {
@@ -907,7 +882,7 @@
               document.getElementById('cancel-link-box').style.display = 'block';
             }
           }
-          setProgress(4);
+          setProgress(3);
           showOnly('step-confirm');
         } else {
           errBox.textContent = result.error || 'Erreur lors de la réservation.';

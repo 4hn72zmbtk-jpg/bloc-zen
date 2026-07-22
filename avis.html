@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BLOC ZEN — Ton avis 🌿</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
   <link rel="stylesheet" href="style.css">
   <style>
     .stars {
@@ -25,8 +26,8 @@
       width: 100%;
       padding: 14px 18px;
       border: 1.5px solid var(--border);
-      border-radius: 10px;
-      font-size: 0.95rem;
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
       font-family: 'Nunito', sans-serif;
       color: var(--text);
       background: var(--surface);
@@ -84,7 +85,7 @@
         <textarea id="comment" class="avis-text" rows="4" placeholder="Ce que tu en as pensé, ce qui t'a fait du bien… 🌿"></textarea>
       </div>
 
-      <div id="avis-error" style="display:none;color:var(--error);font-size:0.88rem;font-weight:600;margin-bottom:12px;padding:10px 14px;background:#fdecea;border-radius:10px;"></div>
+      <div id="avis-error" style="display:none;color:var(--error);font-size:0.88rem;font-weight:600;margin-bottom:12px;padding:10px 14px;background:#fdecea;border-radius:var(--radius-sm);"></div>
       <button class="btn-primary" id="submit-avis" onclick="submitAvis()">Envoyer mon avis 🌿</button>
     </div>
 

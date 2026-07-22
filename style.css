@@ -10,7 +10,7 @@
   --accent:        #c5845a;
   --accent-light:  #f5ebe3;
   --text:          #2d3a2e;
-  --text-muted:    #7a8f7c;
+  --text-muted:    #5e7361;   /* vert-gris, foncé juste assez pour rester lisible (contraste AA) */
   --border:        #d8d0c4;
   --success:       #5a9e74;
   --error:         #c0604a;
@@ -24,6 +24,14 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Toucher doux sur mobile : pas de flash gris, léger enfoncement au tap */
+button, a { -webkit-tap-highlight-color: transparent; }
+.btn-secondary:active,
+.btn-add:active,
+.btn-back:active,
+.tab-btn:active,
+.slot-toggle:active { transform: scale(0.97); }
 
 body {
   font-family: 'Nunito', sans-serif;
@@ -71,7 +79,7 @@ header nav a {
   text-transform: uppercase;
   transition: color 0.2s;
   padding: 6px 12px;
-  border-radius: 20px;
+  border-radius: 999px;
   border: 1.5px solid transparent;
 }
 
@@ -132,132 +140,71 @@ header nav a:hover {
 .dates-grid {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.date-card {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px 22px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
-  font-family: 'Nunito', sans-serif;
-  color: var(--text);
-  text-align: left;
-  width: 100%;
-  box-shadow: var(--shadow);
-  position: relative;
-  overflow: hidden;
-}
-
-.date-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, var(--primary-light) 0%, transparent 60%);
-  opacity: 0;
-  transition: opacity 0.22s;
-}
-
-.date-card:hover {
-  border-color: var(--primary);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.date-card:hover::before { opacity: 1; }
-.date-card:active { transform: scale(0.985); }
-
-.date-day {
-  font-size: 1rem;
-  font-weight: 700;
-  text-transform: capitalize;
-  position: relative;
-}
-
-.date-slots-badge {
-  font-size: 0.78rem;
-  color: var(--primary);
-  font-weight: 700;
-  background: var(--primary-light);
-  padding: 4px 12px;
-  border-radius: 20px;
-  white-space: nowrap;
-  position: relative;
-}
-
-/* ─── Slot cards ─── */
-.slots-grid {
-  display: flex;
-  flex-direction: column;
   gap: 12px;
 }
 
-.slot-card {
+/* Carte d'un jour : date + créneaux directement dessous (1 écran = 1 choix) */
+.date-group {
   background: var(--surface);
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
-  padding: 24px 26px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
-  font-family: 'Nunito', sans-serif;
-  color: var(--text);
-  width: 100%;
+  padding: 18px 20px;
   box-shadow: var(--shadow);
-  position: relative;
-  overflow: hidden;
+  transition: border-color 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.slot-card::after {
-  content: '→';
-  position: absolute;
-  right: 20px;
-  font-size: 1.1rem;
-  color: var(--primary);
-  opacity: 0;
-  transform: translateX(-6px);
-  transition: all 0.2s;
-}
-
-.slot-card:hover {
+.date-group:hover {
   border-color: var(--primary);
-  background: linear-gradient(135deg, var(--primary-light) 0%, var(--surface) 80%);
-  transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
-.slot-card:hover::after { opacity: 1; transform: translateX(0); }
-.slot-card:active { transform: scale(0.985); }
-
-.slot-time {
+.date-day {
+  display: block;
   font-family: 'Lora', serif;
-  font-size: 1.5rem;
-  font-weight: 500;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.date-times {
+  display: flex;
+  gap: 10px;
+}
+
+/* Pastille horaire : grande, tactile (≥48px), un seul tap pour choisir */
+.time-chip {
+  flex: 1;
+  min-height: 52px;
+  padding: 12px 8px;
+  background: var(--primary-light);
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: 'Lora', serif;
+  font-size: 1.15rem;
+  font-weight: 600;
   color: var(--primary);
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.slot-info { text-align: right; }
-
-.slot-duration {
-  display: block;
-  font-size: 0.82rem;
-  color: var(--text-muted);
+.time-chip .time-chip-end {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.78rem;
   font-weight: 700;
+  opacity: 0.7;
 }
 
-.slot-desc {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-top: 2px;
+.time-chip:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(106, 148, 120, 0.35);
 }
+
+.time-chip:active { transform: scale(0.96); }
 
 /* ─── Selected label ─── */
 .selected-label {
@@ -548,7 +495,7 @@ footer {
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   font-family: 'Nunito', sans-serif;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--text);
   background: var(--bg);
   min-width: 180px;
@@ -606,7 +553,7 @@ footer {
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  border-radius: 20px;
+  border-radius: 999px;
   border: 2px solid;
   cursor: pointer;
   font-family: 'Nunito', sans-serif;

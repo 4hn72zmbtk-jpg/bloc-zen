@@ -82,52 +82,71 @@ async function sendEmails({ firstName, lastName, phone, email, note, dateLabel, 
 
   const from = `"BLOC ZEN" <${process.env.GMAIL_USER}>`;
 
-  // Admin notification
+  // Habillage commun — même univers que le site : fond crème, carte blanche, vert sauge
+  const wrap = (inner) => `
+    <div style="background:#f4f1ea;padding:28px 16px;font-family:Arial,Helvetica,sans-serif">
+      <div style="max-width:520px;margin:0 auto;background:#fdfaf6;border:1px solid #d8d0c4;border-radius:16px;padding:32px 28px;color:#2d3a2e">
+        <div style="text-align:center;margin-bottom:22px">
+          <div style="font-size:30px;line-height:1">🌿</div>
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;letter-spacing:2px;color:#6a9478;margin-top:6px">
+            B.L.O.C <em style="color:#c5845a">ZEN</em>
+          </div>
+        </div>
+        ${inner}
+        <p style="margin:28px 0 0;color:#5e7361;font-size:13px;text-align:center">
+          À bientôt pour ta pause 🌿<br>— Agnès
+        </p>
+      </div>
+    </div>`;
+
+  const pill = (txt) => `<span style="display:inline-block;background:#e8f0ea;color:#6a9478;border-radius:999px;padding:6px 16px;font-weight:bold;font-size:14px;margin:3px 4px">${txt}</span>`;
+
+  // Notification pour Agnès
   await transporter.sendMail({
     from,
     to: process.env.ADMIN_EMAIL,
     subject: `[BLOC ZEN] Nouvelle réservation — ${firstName} ${lastName}`,
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:520px;color:#2d3a2e">
-        <h2 style="color:#6a9478">🌿 Nouvelle réservation</h2>
-        <table style="width:100%;border-collapse:collapse">
-          <tr><td style="padding:6px 0;color:#7a8f7c;width:130px">Prénom</td><td><strong>${firstName}</strong></td></tr>
-          <tr><td style="padding:6px 0;color:#7a8f7c">Nom</td><td><strong>${lastName}</strong></td></tr>
-          <tr><td style="padding:6px 0;color:#7a8f7c">Téléphone</td><td><strong>${phone}</strong></td></tr>
-          ${email ? `<tr><td style="padding:6px 0;color:#7a8f7c">Email</td><td>${email}</td></tr>` : ''}
-          <tr><td style="padding:6px 0;color:#7a8f7c">Date</td><td style="text-transform:capitalize"><strong>${dateLabel}</strong></td></tr>
-          <tr><td style="padding:6px 0;color:#7a8f7c">Horaire</td><td><strong>${timeSlot} – ${endTime}</strong></td></tr>
-          ${note ? `<tr><td style="padding:6px 0;color:#7a8f7c;vertical-align:top">Note</td><td style="font-style:italic">"${note}"</td></tr>` : ''}
-        </table>
-        <hr style="border:1px solid #d8d0c4;margin:20px 0">
-        <p style="font-size:12px;color:#7a8f7c">Lien d'annulation : <a href="${cancelUrl}">${cancelUrl}</a></p>
+    html: wrap(`
+      <h2 style="font-family:Georgia,serif;color:#2d3a2e;font-size:19px;margin:0 0 16px;text-align:center">Nouvelle réservation !</h2>
+      <div style="text-align:center;margin-bottom:18px">
+        ${pill('📅 ' + dateLabel)} ${pill('🕐 ' + timeSlot + ' – ' + endTime)}
       </div>
-    `
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <tr><td style="padding:7px 0;color:#5e7361;width:110px">Prénom</td><td><strong>${firstName}</strong></td></tr>
+        <tr><td style="padding:7px 0;color:#5e7361">Nom</td><td><strong>${lastName}</strong></td></tr>
+        <tr><td style="padding:7px 0;color:#5e7361">Téléphone</td><td><strong>${phone}</strong></td></tr>
+        ${email ? `<tr><td style="padding:7px 0;color:#5e7361">Email</td><td>${email}</td></tr>` : ''}
+        ${note ? `<tr><td style="padding:7px 0;color:#5e7361;vertical-align:top">Son mot</td><td style="font-style:italic">« ${note} »</td></tr>` : ''}
+      </table>
+      <p style="font-size:12px;color:#5e7361;margin:18px 0 0;border-top:1px solid #d8d0c4;padding-top:14px">
+        Lien d'annulation : <a href="${cancelUrl}" style="color:#6a9478">${cancelUrl}</a>
+      </p>
+    `)
   });
 
-  // User confirmation (only if email provided)
+  // Confirmation pour la collègue
   if (email) {
     await transporter.sendMail({
       from,
       to: email,
       subject: 'BLOC ZEN — Ta réservation est confirmée 🌿',
-      html: `
-        <div style="font-family:Arial,sans-serif;max-width:520px;color:#2d3a2e">
-          <h2 style="color:#6a9478">🌿 Réservation confirmée !</h2>
-          <p>Bonjour ${firstName},</p>
-          <p>Ta séance de relaxation est bien réservée :</p>
-          <div style="background:#e8f0ea;border-radius:10px;padding:16px;margin:16px 0">
-            <p style="margin:4px 0;text-transform:capitalize">📅 <strong>${dateLabel}</strong></p>
-            <p style="margin:4px 0">🕐 <strong>${timeSlot} – ${endTime}</strong></p>
-          </div>
-          <p>Si tu ne peux plus venir, annule facilement ici :</p>
+      html: wrap(`
+        <h2 style="font-family:Georgia,serif;color:#5a9e74;font-size:19px;margin:0 0 10px;text-align:center">C'est réservé !</h2>
+        <p style="text-align:center;margin:0 0 16px">Bonjour ${firstName}, ta séance de relaxation t'attend :</p>
+        <div style="text-align:center;margin-bottom:20px">
+          ${pill('📅 ' + dateLabel)} ${pill('🕐 ' + timeSlot + ' – ' + endTime)} ${pill('📍 Salle 4')}
+        </div>
+        <p style="text-align:center;font-size:14px;color:#5e7361;margin:0 0 18px">
+          N'oublie pas ton huile ou ta crème si tu en as une 🧴
+        </p>
+        <p style="text-align:center;font-size:13px;color:#5e7361;margin:0 0 8px">Un imprévu ? Annule en un clic :</p>
+        <div style="text-align:center">
           <a href="${cancelUrl}"
-             style="display:inline-block;padding:12px 24px;background:#6a9478;color:white;text-decoration:none;border-radius:10px;font-weight:bold;margin-top:8px">
+             style="display:inline-block;padding:13px 26px;background:#6a9478;color:white;text-decoration:none;border-radius:16px;font-weight:bold">
             Annuler ma réservation
           </a>
-          <p style="margin-top:28px;color:#7a8f7c;font-size:13px">À bientôt 🌿<br>BLOC ZEN</p>
         </div>
-      `
+      `)
     });
   }
 }
