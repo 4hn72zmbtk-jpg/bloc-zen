@@ -152,10 +152,19 @@
         <div id="histo-stats" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
              gap:12px; margin-bottom:26px"></div>
 
-        <h3 style="font-family:'Lora',serif; font-size:1.05rem; margin-bottom:6px">Qui est déjà venu</h3>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px">
-          Trié par nombre de séances. Les personnes venues plusieurs fois sont tes fidèles 🌿
+        <h3 style="font-family:'Lora',serif; font-size:1.05rem; margin-bottom:6px">Ton petit carnet 🌿</h3>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px">
+          Tape sur une personne pour voir toute son histoire : ses venues, ses mots, ses avis.
         </p>
+
+        <input type="search" id="histo-search"
+               placeholder="🔍 Chercher un prénom, un nom, un téléphone…"
+               oninput="renderHistoList()"
+               style="width:100%;padding:14px 18px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+                      font-size:1rem;font-family:'Nunito',sans-serif;color:var(--text);background:var(--surface);
+                      margin-bottom:8px;-webkit-appearance:none">
+        <div id="histo-count" style="font-size:0.8rem;color:var(--text-muted);font-weight:700;margin-bottom:12px"></div>
+
         <div id="histo-people" class="days-list"></div>
       </div>
 
@@ -350,16 +359,22 @@
     }
 
     // ── Tabs ─────────────────────────────────────────
-    // ── Historique / Statistiques ────────────────────
-    // Tout est calculé à partir des réservations déjà en base — aucune donnée supplémentaire.
+    // ── Historique / Mini-CRM ────────────────────────
+    // Tout est calculé à partir des réservations + avis déjà en base — aucune donnée supplémentaire.
+    let histoPeople = [];   // fiches construites, filtrées par la recherche
+
     async function loadHistorique() {
       document.getElementById('histo-loading').style.display = 'block';
       document.getElementById('histo-wrap').style.display = 'none';
       document.getElementById('no-histo-msg').style.display = 'none';
       try {
-        const res = await fetch('/api/admin-bookings', { headers: authHeaders() });
-        const data = await res.json();
-        renderHistorique(data.bookings || []);
+        const [bRes, fRes] = await Promise.all([
+          fetch('/api/admin-bookings',  { headers: authHeaders() }),
+          fetch('/api/admin-feedbacks', { headers: authHeaders() })
+        ]);
+        const bookings  = (await bRes.json()).bookings  || [];
+        const feedbacks = (await fRes.json()).feedbacks || [];
+        buildHistorique(bookings, feedbacks);
       } catch {
         document.getElementById('histo-loading').style.display = 'none';
         document.getElementById('no-histo-msg').style.display = 'block';
@@ -375,13 +390,17 @@
       return 'nom:' + (b.first_name + b.last_name).toLowerCase().replace(/\s/g, '');
     }
 
-    function renderHistorique(bookings) {
+    function buildHistorique(bookings, feedbacks) {
       document.getElementById('histo-loading').style.display = 'none';
 
       if (bookings.length === 0) {
         document.getElementById('no-histo-msg').style.display = 'block';
         return;
       }
+
+      // Avis rattachés à une réservation → retrouvables par personne
+      const fbByBooking = {};
+      feedbacks.forEach(f => { if (f.booking_id) fbByBooking[f.booking_id] = f; });
 
       const today = new Date().toISOString().slice(0, 10);
       const people = {};
@@ -398,19 +417,23 @@
           people[k] = {
             nom: `${b.first_name} ${b.last_name}`.trim(),
             phone: b.phone, email: b.email,
-            seances: 0, aVenir: 0, dates: [], notes: []
+            seances: 0, aVenir: 0,
+            datesPassees: [], datesAVenir: [], notes: [], avis: []
           };
         }
         const p = people[k];
-        if (passee) { p.seances++; if (d) p.dates.push(d); }
-        else p.aVenir++;
-        if (b.note) p.notes.push(b.note);
+        if (!p.email && b.email) p.email = b.email;   // complète la fiche si une résa récente a l'email
+        if (passee) { p.seances++; if (d) p.datesPassees.push(d); }
+        else { p.aVenir++; if (d) p.datesAVenir.push(d); }
+        if (b.note) p.notes.push({ date: d, texte: b.note });
+        const fb = fbByBooking[b.id];
+        if (fb) p.avis.push({ date: fb.slot_date || d, rating: fb.rating, comment: fb.comment });
       });
 
-      const liste = Object.values(people)
+      histoPeople = Object.values(people)
         .sort((a, b) => b.seances - a.seances || b.aVenir - a.aVenir);
 
-      const fideles = liste.filter(p => p.seances >= 2).length;
+      const fideles = histoPeople.filter(p => p.seances >= 2).length;
 
       // ── Chiffres clés ──
       const stat = (val, label, color) => `
@@ -423,52 +446,116 @@
 
       document.getElementById('histo-stats').innerHTML =
           stat(faites, 'Séances faites', 'var(--primary)')
-        + stat(liste.length, 'Personnes', 'var(--primary)')
+        + stat(histoPeople.length, 'Personnes', 'var(--primary)')
         + stat(fideles, 'Revenues 2×+', 'var(--accent)')
         + stat(aVenir, 'À venir', 'var(--text-muted)');
 
-      // ── Liste des personnes ──
+      document.getElementById('histo-search').value = '';
+      renderHistoList();
+      document.getElementById('histo-wrap').style.display = 'block';
+    }
+
+    // Recherche insensible aux accents et aux espaces des numéros
+    function normSearch(s) {
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    function fmtJour(d) {
+      return new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function renderHistoList() {
+      const q = normSearch(document.getElementById('histo-search').value.trim());
+      const qTel = q.replace(/\D/g, '');
+
+      const liste = histoPeople.filter(p =>
+        !q
+        || normSearch(p.nom).includes(q)
+        || normSearch(p.email).includes(q)
+        || (qTel && (p.phone || '').replace(/\D/g, '').includes(qTel))
+      );
+
+      document.getElementById('histo-count').textContent =
+        q ? `${liste.length} résultat${liste.length > 1 ? 's' : ''} pour « ${document.getElementById('histo-search').value.trim()} »`
+          : `${histoPeople.length} personne${histoPeople.length > 1 ? 's' : ''} dans ton carnet`;
+
       const wrap = document.getElementById('histo-people');
       wrap.innerHTML = '';
-      liste.forEach(p => {
-        const derniere = p.dates.length
-          ? new Date(p.dates.sort().slice(-1)[0] + 'T00:00:00')
-              .toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-          : '—';
 
-        const badgeFidele = p.seances >= 2
-          ? `<span style="font-size:0.66rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;
-                   margin-left:8px;padding:2px 8px;border-radius:var(--radius-sm);
-                   background:var(--accent-light);color:var(--accent)">fidèle ×${p.seances}</span>` : '';
+      if (liste.length === 0) {
+        wrap.innerHTML = `<div class="no-bookings">🌱 Personne trouvée — vérifie l'orthographe ?</div>`;
+        return;
+      }
 
-        const badgeAVenir = p.aVenir
-          ? `<span style="font-size:0.66rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;
-                   margin-left:6px;padding:2px 8px;border-radius:var(--radius-sm);
-                   background:var(--primary-light);color:var(--primary)">${p.aVenir} à venir</span>` : '';
+      liste.forEach((p, i) => {
+        const derniere = p.datesPassees.length ? fmtJour([...p.datesPassees].sort().slice(-1)[0]) : '—';
+
+        const badge = (txt, bg, col) => `<span style="font-size:0.66rem;font-weight:800;text-transform:uppercase;
+              letter-spacing:0.05em;margin-left:6px;padding:2px 8px;border-radius:999px;background:${bg};color:${col}">${txt}</span>`;
+
+        const badges =
+          (p.seances >= 2 ? badge('fidèle ×' + p.seances, 'var(--accent-light)', 'var(--accent)') : '')
+        + (p.aVenir ? badge(p.aVenir + ' à venir', 'var(--primary-light)', 'var(--primary)') : '');
+
+        // ── Fiche détaillée (dépliable) ──
+        const pills = (arr, bg, col) => arr.length
+          ? [...arr].sort().map(d => `<span style="display:inline-block;background:${bg};color:${col};
+               border-radius:999px;padding:3px 10px;font-size:0.75rem;font-weight:700;margin:2px 3px 2px 0">${fmtJour(d)}</span>`).join('')
+          : '';
+
+        const notesHtml = p.notes.length
+          ? p.notes.map(n => `<p style="font-size:0.85rem;color:var(--text-muted);font-style:italic;margin:4px 0">
+               « ${escapeHtml(n.texte)} » <span style="font-style:normal;font-size:0.72rem">— ${n.date ? fmtJour(n.date) : ''}</span></p>`).join('')
+          : `<p style="font-size:0.82rem;color:var(--text-muted);margin:4px 0">Aucun mot laissé.</p>`;
+
+        const avisHtml = p.avis.length
+          ? p.avis.map(a => `<p style="font-size:0.85rem;color:var(--text);margin:4px 0">
+               ${'⭐'.repeat(a.rating || 0)}${a.comment ? `<br><em style="color:var(--text-muted)">« ${escapeHtml(a.comment)} »</em>` : ''}</p>`).join('')
+          : `<p style="font-size:0.82rem;color:var(--text-muted);margin:4px 0">Pas encore d'avis.</p>`;
+
+        const section = (titre, contenu) => `
+          <div style="margin-top:12px">
+            <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;
+                 color:var(--accent);margin-bottom:4px">${titre}</div>
+            ${contenu}
+          </div>`;
 
         const div = document.createElement('div');
         div.className = 'day-item';
+        div.style.cursor = 'pointer';
         div.innerHTML = `
           <div class="day-item-header" style="align-items:flex-start; margin-bottom:8px">
             <div>
               <span class="day-date" style="text-transform:none">${escapeHtml(p.nom)}</span>
-              ${badgeFidele}${badgeAVenir}
+              ${badges}
               <div style="font-size:0.82rem; color:var(--text-muted); margin-top:4px">
                 ${p.seances} séance${p.seances > 1 ? 's' : ''} · dernière : ${derniere}
               </div>
             </div>
+            <span class="histo-chevron" style="color:var(--text-muted);font-size:0.85rem;transition:transform 0.2s">▼</span>
           </div>
           <div style="font-size:0.82rem; color:var(--text-muted); display:flex; gap:14px; flex-wrap:wrap">
-            ${p.phone ? `<a href="tel:${p.phone.replace(/\s/g,'')}" style="color:var(--primary);text-decoration:none;font-weight:600">📞 ${escapeHtml(p.phone)}</a>` : ''}
-            ${p.email ? `<a href="mailto:${p.email}" style="color:var(--primary);text-decoration:none;font-weight:600">✉️ ${escapeHtml(p.email)}</a>` : '<span style="color:var(--accent)">✉️ pas d\'email</span>'}
+            ${p.phone ? `<a href="tel:${p.phone.replace(/\s/g,'')}" onclick="event.stopPropagation()" style="color:var(--primary);text-decoration:none;font-weight:600">📞 ${escapeHtml(p.phone)}</a>` : ''}
+            ${p.email ? `<a href="mailto:${p.email}" onclick="event.stopPropagation()" style="color:var(--primary);text-decoration:none;font-weight:600">✉️ ${escapeHtml(p.email)}</a>` : '<span style="color:var(--accent)">✉️ pas d\'email</span>'}
           </div>
-          ${p.notes.length ? `<p style="font-size:0.85rem;color:var(--text-muted);font-style:italic;margin-top:10px">
-             « ${escapeHtml(p.notes[p.notes.length-1])} »</p>` : ''}
+          <div class="histo-detail" style="display:none;border-top:1px solid var(--border);margin-top:12px;padding-top:4px">
+            ${p.datesPassees.length ? section('Ses venues', pills(p.datesPassees, 'var(--primary-light)', 'var(--primary)')) : ''}
+            ${p.datesAVenir.length ? section('À venir', pills(p.datesAVenir, 'var(--accent-light)', 'var(--accent)')) : ''}
+            ${section('Ses mots à la réservation', notesHtml)}
+            ${section('Ses avis', avisHtml)}
+          </div>
         `;
+
+        div.addEventListener('click', () => {
+          const det = div.querySelector('.histo-detail');
+          const chev = div.querySelector('.histo-chevron');
+          const open = det.style.display !== 'none';
+          det.style.display = open ? 'none' : 'block';
+          chev.style.transform = open ? '' : 'rotate(180deg)';
+        });
+
         wrap.appendChild(div);
       });
-
-      document.getElementById('histo-wrap').style.display = 'block';
     }
 
     function switchTab(tabId, btn) {
