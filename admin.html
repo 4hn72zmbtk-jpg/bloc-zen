@@ -368,13 +368,15 @@
       document.getElementById('histo-wrap').style.display = 'none';
       document.getElementById('no-histo-msg').style.display = 'none';
       try {
-        const [bRes, fRes] = await Promise.all([
+        const [bRes, fRes, nRes] = await Promise.all([
           fetch('/api/admin-bookings',  { headers: authHeaders() }),
-          fetch('/api/admin-feedbacks', { headers: authHeaders() })
+          fetch('/api/admin-feedbacks', { headers: authHeaders() }),
+          fetch('/api/admin-crm-notes', { headers: authHeaders() })
         ]);
         const bookings  = (await bRes.json()).bookings  || [];
         const feedbacks = (await fRes.json()).feedbacks || [];
-        buildHistorique(bookings, feedbacks);
+        const crmNotes  = (await nRes.json()).notes     || [];
+        buildHistorique(bookings, feedbacks, crmNotes);
       } catch {
         document.getElementById('histo-loading').style.display = 'none';
         document.getElementById('no-histo-msg').style.display = 'block';
@@ -390,7 +392,8 @@
       return 'nom:' + (b.first_name + b.last_name).toLowerCase().replace(/\s/g, '');
     }
 
-    function buildHistorique(bookings, feedbacks) {
+    function buildHistorique(bookings, feedbacks, crmNotes) {
+      crmNotes = crmNotes || [];
       document.getElementById('histo-loading').style.display = 'none';
 
       if (bookings.length === 0) {
@@ -415,10 +418,12 @@
         const k = personKey(b);
         if (!people[k]) {
           people[k] = {
+            cle: k,
             nom: `${b.first_name} ${b.last_name}`.trim(),
             phone: b.phone, email: b.email,
             seances: 0, aVenir: 0,
-            datesPassees: [], datesAVenir: [], notes: [], avis: []
+            datesPassees: [], datesAVenir: [], notes: [], avis: [],
+            carnet: crmNotes.filter(n => n.person_key === k)
           };
         }
         const p = people[k];
@@ -520,6 +525,36 @@
             ${contenu}
           </div>`;
 
+        // ── Mon carnet perso : notes qu'Agnès écrit elle-même ──
+        const carnetHtml = `
+          <div id="carnet-${i}">
+            ${p.carnet.length
+              ? p.carnet.map(n => `
+                <div style="display:flex;gap:8px;align-items:flex-start;background:var(--bg);
+                     border-radius:var(--radius-sm);padding:10px 12px;margin:6px 0">
+                  <div style="flex:1">
+                    <div style="font-size:0.88rem;color:var(--text);line-height:1.5">${escapeHtml(n.note)}</div>
+                    <div style="font-size:0.7rem;color:var(--text-muted);margin-top:3px">
+                      ${new Date(n.created_at).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' })}
+                    </div>
+                  </div>
+                  <button onclick="event.stopPropagation(); deleteCrmNote('${n.id}', this.closest('div').parentElement)"
+                          style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.8rem;padding:2px 4px">🗑</button>
+                </div>`).join('')
+              : `<p style="font-size:0.82rem;color:var(--text-muted);margin:4px 0">Rien de noté pour l'instant.</p>`}
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px" onclick="event.stopPropagation()">
+            <input type="text" id="crm-input-${i}" maxlength="1000"
+                   placeholder="Ex : adore les épaules, allergie lavande, parler de son voyage…"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();addCrmNote('${p.cle}', ${i})}"
+                   style="flex:1;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+                          font-size:1rem;font-family:'Nunito',sans-serif;color:var(--text);background:var(--surface);
+                          -webkit-appearance:none">
+            <button onclick="addCrmNote('${p.cle}', ${i})" class="btn-add"
+                    style="padding:11px 18px;white-space:nowrap">+ Noter</button>
+          </div>
+          <div id="crm-msg-${i}" style="display:none;font-size:0.8rem;font-weight:600;margin-top:6px"></div>`;
+
         const div = document.createElement('div');
         div.className = 'day-item';
         div.style.cursor = 'pointer';
@@ -541,6 +576,7 @@
           <div class="histo-detail" style="display:none;border-top:1px solid var(--border);margin-top:12px;padding-top:4px">
             ${p.datesPassees.length ? section('Ses venues', pills(p.datesPassees, 'var(--primary-light)', 'var(--primary)')) : ''}
             ${p.datesAVenir.length ? section('À venir', pills(p.datesAVenir, 'var(--accent-light)', 'var(--accent)')) : ''}
+            ${section('📝 Mon carnet (visible par toi seule)', carnetHtml)}
             ${section('Ses mots à la réservation', notesHtml)}
             ${section('Ses avis', avisHtml)}
           </div>
@@ -556,6 +592,70 @@
 
         wrap.appendChild(div);
       });
+    }
+
+    // ── Notes privées du carnet ──────────────────────
+    async function addCrmNote(cle, i) {
+      const input = document.getElementById('crm-input-' + i);
+      const msg   = document.getElementById('crm-msg-' + i);
+      const texte = input.value.trim();
+      if (!texte) return;
+
+      input.disabled = true;
+      try {
+        const res = await fetch('/api/admin-crm-notes', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ personKey: cle, note: texte })
+        });
+        const data = await res.json();
+        if (data.success) {
+          input.value = '';
+          // Ajoute la note à la fiche sans recharger toute la page
+          const p = histoPeople.find(x => x.cle === cle);
+          if (p && data.note) p.carnet.unshift(data.note);
+          const zone = document.getElementById('carnet-' + i);
+          if (zone && data.note) {
+            if (zone.querySelector('p')) zone.innerHTML = '';
+            const d = document.createElement('div');
+            d.style.cssText = 'display:flex;gap:8px;align-items:flex-start;background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px;margin:6px 0';
+            d.innerHTML = `
+              <div style="flex:1">
+                <div style="font-size:0.88rem;color:var(--text);line-height:1.5">${escapeHtml(data.note.note)}</div>
+                <div style="font-size:0.7rem;color:var(--text-muted);margin-top:3px">à l'instant</div>
+              </div>
+              <button onclick="event.stopPropagation(); deleteCrmNote('${data.note.id}', this.parentElement)"
+                      style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.8rem;padding:2px 4px">🗑</button>`;
+            zone.prepend(d);
+          }
+        } else {
+          msg.textContent = '⚠️ ' + (data.error || 'Erreur');
+          msg.style.color = 'var(--error)';
+          msg.style.display = 'block';
+          setTimeout(() => { msg.style.display = 'none'; }, 5000);
+        }
+      } catch {
+        msg.textContent = '⚠️ Erreur réseau.';
+        msg.style.color = 'var(--error)';
+        msg.style.display = 'block';
+      } finally {
+        input.disabled = false;
+        input.focus();
+      }
+    }
+
+    async function deleteCrmNote(id, el) {
+      if (!confirm('Supprimer cette note ?')) return;
+      try {
+        await fetch('/api/admin-crm-notes', {
+          method: 'DELETE',
+          headers: authHeaders(),
+          body: JSON.stringify({ id })
+        });
+        el.remove();
+      } catch {
+        alert('Erreur réseau.');
+      }
     }
 
     function switchTab(tabId, btn) {
