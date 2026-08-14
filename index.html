@@ -481,26 +481,39 @@
       margin-bottom: 22px;
     }
 
+    /* Carrousel : les avis défilent horizontalement d'un glissement de doigt */
     .testimonials-list {
       display: flex;
-      flex-direction: column;
       gap: 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding: 4px 0;
+      scroll-padding: 0 16px;
     }
 
+    .testimonials-list::-webkit-scrollbar { display: none; }
+
     .testimonial-card {
+      flex: 0 0 88%;              /* une carte à la fois, avec un aperçu de la suivante */
+      scroll-snap-align: center;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 18px 20px;
+      padding: 20px 22px;
       box-shadow: var(--shadow);
     }
 
-    .testimonial-stars { font-size: 0.9rem; margin-bottom: 6px; }
+    /* Un seul avis : il occupe toute la largeur, pas de "peek" */
+    .testimonials-list.single .testimonial-card { flex-basis: 100%; }
+
+    .testimonial-stars { font-size: 0.95rem; margin-bottom: 8px; }
 
     .testimonial-comment {
       font-size: 0.95rem;
       color: var(--text);
-      line-height: 1.6;
+      line-height: 1.65;
       font-style: italic;
     }
 
@@ -508,8 +521,30 @@
       font-size: 0.82rem;
       color: var(--primary);
       font-weight: 700;
-      margin-top: 8px;
+      margin-top: 10px;
     }
+
+    /* Points de navigation */
+    .testimonials-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .testimonials-dots.hidden { display: none; }
+
+    .t-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .t-dot.active { background: var(--primary); width: 22px; border-radius: 4px; }
 
   </style>
 </head>
@@ -608,6 +643,7 @@
     <h2 class="testimonials-title">Vos petits mots 💚</h2>
     <p class="testimonials-sub">Ce qui compte vraiment pour moi</p>
     <div id="testimonials-list" class="testimonials-list"></div>
+    <div id="testimonials-dots" class="testimonials-dots hidden"></div>
   </section>
 
   <!-- ── Laisser un mot (libre, sans réservation) ── -->
@@ -914,9 +950,14 @@
         const data = await res.json();
         const list = data.feedbacks || [];
         if (list.length === 0) return;
+
         const wrap = document.getElementById('testimonials-list');
+        const dots = document.getElementById('testimonials-dots');
         wrap.innerHTML = '';
-        list.forEach(f => {
+        dots.innerHTML = '';
+        wrap.classList.toggle('single', list.length === 1);
+
+        list.forEach((f, i) => {
           const card = document.createElement('div');
           card.className = 'testimonial-card';
           card.innerHTML = `
@@ -925,7 +966,37 @@
             <div class="testimonial-author">— ${escapeHtml(f.first_name || 'Une collègue')}</div>
           `;
           wrap.appendChild(card);
+
+          // Un point de navigation par avis (dès qu'il y en a au moins 2)
+          if (list.length > 1) {
+            const dot = document.createElement('button');
+            dot.className = 't-dot' + (i === 0 ? ' active' : '');
+            dot.setAttribute('aria-label', 'Avis ' + (i + 1));
+            dot.onclick = () => wrap.children[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            dots.appendChild(dot);
+          }
         });
+
+        dots.classList.toggle('hidden', list.length <= 1);
+
+        // Le point actif suit le défilement au doigt
+        if (list.length > 1) {
+          let raf;
+          wrap.addEventListener('scroll', () => {
+            cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(() => {
+              const center = wrap.scrollLeft + wrap.clientWidth / 2;
+              let best = 0, bestDist = Infinity;
+              [...wrap.children].forEach((c, i) => {
+                const cardCenter = c.offsetLeft + c.offsetWidth / 2;
+                const d = Math.abs(cardCenter - center);
+                if (d < bestDist) { bestDist = d; best = i; }
+              });
+              [...dots.children].forEach((d, i) => d.classList.toggle('active', i === best));
+            });
+          }, { passive: true });
+        }
+
         document.getElementById('testimonials').style.display = 'block';
       } catch {}
     }

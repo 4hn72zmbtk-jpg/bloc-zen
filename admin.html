@@ -101,6 +101,14 @@
 
     <!-- Tab 2 : Réservations -->
     <div id="tab-reservations" class="tab-content">
+      <div class="histo-sorts" id="bookings-sorts">
+        <button class="sort-chip active" data-sort="soon"  onclick="setBookingSort(this)">🔜 Prochaines d'abord</button>
+        <button class="sort-chip"        data-sort="far"   onclick="setBookingSort(this)">🔭 Lointaines d'abord</button>
+        <button class="sort-chip"        data-sort="upcoming" onclick="setBookingSort(this)">📅 À venir seulement</button>
+        <button class="sort-chip"        data-sort="past"  onclick="setBookingSort(this)">🕓 Passées</button>
+      </div>
+      <div id="bookings-count" style="font-size:0.8rem;color:var(--text-muted);font-weight:700;margin-bottom:12px"></div>
+
       <div id="bookings-loading" style="text-align:center; padding:20px; color:var(--text-muted)">
         <span class="loading-spinner"></span>
       </div>
@@ -109,6 +117,7 @@
           <table>
             <thead>
               <tr>
+                <th>Statut</th>
                 <th>Date</th>
                 <th>Horaire</th>
                 <th>Prénom</th>
@@ -129,9 +138,17 @@
 
     <!-- Tab 3 : Avis -->
     <div id="tab-avis" class="tab-content">
-      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:20px">
+      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:14px">
         🔒 Ces avis sont <strong>privés</strong>. Clique sur « ⭐ Mettre en avant » pour afficher un avis en témoignage public sur le site.
       </p>
+
+      <div class="histo-sorts" id="avis-filters">
+        <button class="sort-chip active" data-filter="all"     onclick="setAvisFilter(this)">Tous</button>
+        <button class="sort-chip"        data-filter="pending" onclick="setAvisFilter(this)">🕐 Pas encore acceptés</button>
+        <button class="sort-chip"        data-filter="public"  onclick="setAvisFilter(this)">👁️ Publiés</button>
+      </div>
+      <div id="avis-count" style="font-size:0.8rem;color:var(--text-muted);font-weight:700;margin-bottom:12px"></div>
+
       <div id="avis-loading" style="text-align:center; padding:20px; color:var(--text-muted)">
         <span class="loading-spinner"></span>
       </div>
@@ -897,6 +914,9 @@
     }
 
     // ── Bookings ──────────────────────────────────────
+    let allBookings = [];      // toutes les réservations chargées
+    let bookingSort = 'soon';  // tri/filtre courant
+
     async function loadBookings() {
       document.getElementById('bookings-loading').style.display = 'block';
       document.getElementById('bookings-wrap').style.display = 'none';
@@ -905,31 +925,82 @@
       try {
         const res = await fetch('/api/admin-bookings', { headers: authHeaders() });
         const data = await res.json();
-        renderBookings(data.bookings || []);
+        allBookings = data.bookings || [];
+        renderBookings();
       } catch {
         document.getElementById('bookings-loading').style.display = 'none';
       }
     }
 
-    function renderBookings(bookings) {
+    function setBookingSort(btn) {
+      document.querySelectorAll('#bookings-sorts .sort-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      bookingSort = btn.dataset.sort;
+      renderBookings();
+    }
+
+    function renderBookings() {
       document.getElementById('bookings-loading').style.display = 'none';
       const tbody = document.getElementById('bookings-body');
       tbody.innerHTML = '';
 
-      if (bookings.length === 0) {
+      if (allBookings.length === 0) {
         document.getElementById('no-bookings-msg').style.display = 'block';
+        document.getElementById('bookings-wrap').style.display = 'none';
+        document.getElementById('bookings-count').textContent = '';
+        return;
+      }
+      document.getElementById('no-bookings-msg').style.display = 'none';
+
+      const today = new Date().toISOString().slice(0, 10);
+      const dateOf = b => (b.available_slots || {}).slot_date || '';
+      const estPassee = b => { const d = dateOf(b); return d && d <= today; };
+
+      // Filtrage
+      let liste = allBookings.filter(b => {
+        if (bookingSort === 'upcoming') return !estPassee(b);
+        if (bookingSort === 'past')     return estPassee(b);
+        return true;
+      });
+
+      // Tri par date
+      liste.sort((a, b) => {
+        const da = dateOf(a) + (a.available_slots || {}).time_slot;
+        const db = dateOf(b) + (b.available_slots || {}).time_slot;
+        return bookingSort === 'far' || bookingSort === 'past'
+          ? db.localeCompare(da)   // plus lointain / plus récent d'abord
+          : da.localeCompare(db);  // plus proche d'abord
+      });
+
+      const nbFutur = allBookings.filter(b => !estPassee(b)).length;
+      const nbPasse = allBookings.length - nbFutur;
+      document.getElementById('bookings-count').innerHTML =
+        `${liste.length} affichée${liste.length > 1 ? 's' : ''} · <span style="color:var(--primary)">${nbFutur} à venir</span> · ${nbPasse} passée${nbPasse > 1 ? 's' : ''}`;
+
+      if (liste.length === 0) {
+        document.getElementById('bookings-wrap').style.display = 'block';
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:30px">
+          🌿 ${bookingSort === 'upcoming' ? 'Aucune réservation à venir.' : 'Aucune réservation passée.'}</td></tr>`;
         return;
       }
 
       document.getElementById('bookings-wrap').style.display = 'block';
-      bookings.forEach(b => {
+      liste.forEach(b => {
         const slot = b.available_slots;
         const dateLabel = slot
           ? new Date(slot.slot_date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
           : '—';
         const timeLabel = slot ? `${slot.time_slot}–${addMinutes(slot.time_slot, 20)}` : '—';
+        const passee = estPassee(b);
+
+        const statut = passee
+          ? `<span style="font-size:0.66rem;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;padding:3px 9px;border-radius:999px;background:var(--bg-2);color:var(--text-muted)">✓ passée</span>`
+          : `<span style="font-size:0.66rem;font-weight:800;text-transform:uppercase;letter-spacing:0.04em;padding:3px 9px;border-radius:999px;background:var(--primary-light);color:var(--primary)">à venir</span>`;
+
         const tr = document.createElement('tr');
+        if (passee) tr.style.opacity = '0.62';   // les passées, présentes mais discrètes
         tr.innerHTML = `
+          <td>${statut}</td>
           <td style="text-transform:capitalize">${dateLabel}</td>
           <td><strong>${timeLabel}</strong></td>
           <td>${b.first_name}</td>
@@ -958,12 +1029,9 @@
         });
         const data = await res.json();
         if (data.success) {
-          btn.closest('tr').remove();
-          const tbody = document.getElementById('bookings-body');
-          if (tbody.children.length === 0) {
-            document.getElementById('bookings-wrap').style.display = 'none';
-            document.getElementById('no-bookings-msg').style.display = 'block';
-          }
+          // Retire de la liste et ré-affiche (compteur + tri à jour)
+          allBookings = allBookings.filter(b => b.id !== bookingId);
+          renderBookings();
         }
       } catch {
         btn.disabled = false;
@@ -972,6 +1040,9 @@
     }
 
     // ── Avis ──────────────────────────────────────────
+    let allAvis = [];          // tous les avis chargés
+    let avisFilter = 'all';    // filtre courant
+
     async function loadAvis() {
       document.getElementById('avis-loading').style.display = 'block';
       document.getElementById('avis-list').style.display = 'none';
@@ -979,19 +1050,49 @@
       try {
         const res = await fetch('/api/admin-feedbacks', { headers: authHeaders() });
         const data = await res.json();
-        renderAvis(data.feedbacks || []);
+        allAvis = data.feedbacks || [];
+        renderAvis();
       } catch {
         document.getElementById('avis-loading').style.display = 'none';
       }
     }
 
-    function renderAvis(feedbacks) {
+    function setAvisFilter(btn) {
+      document.querySelectorAll('#avis-filters .sort-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      avisFilter = btn.dataset.filter;
+      renderAvis();
+    }
+
+    function renderAvis() {
       document.getElementById('avis-loading').style.display = 'none';
       const list = document.getElementById('avis-list');
       list.innerHTML = '';
 
-      if (feedbacks.length === 0) {
+      const nbPending = allAvis.filter(f => !f.is_public).length;
+      const nbPublic  = allAvis.filter(f => f.is_public).length;
+
+      // Compteur + petit rappel s'il reste des avis à traiter
+      document.getElementById('avis-count').innerHTML =
+          `${allAvis.length} avis`
+        + (nbPending ? ` · <span style="color:var(--accent)">${nbPending} pas encore accepté${nbPending > 1 ? 's' : ''}</span>` : '')
+        + (nbPublic ? ` · ${nbPublic} publié${nbPublic > 1 ? 's' : ''}` : '');
+
+      const feedbacks = allAvis.filter(f =>
+        avisFilter === 'public' ? f.is_public
+        : avisFilter === 'pending' ? !f.is_public
+        : true
+      );
+
+      if (allAvis.length === 0) {
         document.getElementById('no-avis-msg').style.display = 'block';
+        return;
+      }
+      document.getElementById('no-avis-msg').style.display = 'none';
+
+      if (feedbacks.length === 0) {
+        list.style.display = 'flex';
+        list.innerHTML = `<div class="no-bookings">🌿 ${avisFilter === 'pending' ? 'Tout est traité — aucun avis en attente !' : 'Aucun avis publié pour l\'instant.'}</div>`;
         return;
       }
 
