@@ -481,32 +481,32 @@
       margin-bottom: 22px;
     }
 
-    /* Carrousel : les avis défilent horizontalement d'un glissement de doigt */
-    .testimonials-list {
-      display: flex;
-      gap: 12px;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      padding: 4px 0;
-      scroll-padding: 0 16px;
+    /* Carrousel en boucle : une carte visible à la fois, glissement piloté */
+    .carousel-viewport {
+      overflow: hidden;
+      border-radius: var(--radius);
+      touch-action: pan-y;   /* laisse le scroll vertical de la page, capte l'horizontal */
     }
 
-    .testimonials-list::-webkit-scrollbar { display: none; }
+    .carousel-track {
+      display: flex;
+      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
 
     .testimonial-card {
-      flex: 0 0 88%;              /* une carte à la fois, avec un aperçu de la suivante */
-      scroll-snap-align: center;
+      flex: 0 0 100%;
+      box-sizing: border-box;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px 22px;
+      padding: 22px 24px;
       box-shadow: var(--shadow);
+      min-height: 130px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
-
-    /* Un seul avis : il occupe toute la largeur, pas de "peek" */
-    .testimonials-list.single .testimonial-card { flex-basis: 100%; }
 
     .testimonial-stars { font-size: 0.95rem; margin-bottom: 8px; }
 
@@ -642,7 +642,9 @@
   <section id="testimonials" class="testimonials-section" style="display:none">
     <h2 class="testimonials-title">Vos petits mots 💚</h2>
     <p class="testimonials-sub">Ce qui compte vraiment pour moi</p>
-    <div id="testimonials-list" class="testimonials-list"></div>
+    <div class="carousel-viewport">
+      <div id="testimonials-track" class="carousel-track"></div>
+    </div>
     <div id="testimonials-dots" class="testimonials-dots hidden"></div>
   </section>
 
@@ -951,11 +953,10 @@
         const list = data.feedbacks || [];
         if (list.length === 0) return;
 
-        const wrap = document.getElementById('testimonials-list');
-        const dots = document.getElementById('testimonials-dots');
-        wrap.innerHTML = '';
+        const track = document.getElementById('testimonials-track');
+        const dots  = document.getElementById('testimonials-dots');
+        track.innerHTML = '';
         dots.innerHTML = '';
-        wrap.classList.toggle('single', list.length === 1);
 
         list.forEach((f, i) => {
           const card = document.createElement('div');
@@ -965,40 +966,54 @@
             ${f.comment ? `<div class="testimonial-comment">« ${escapeHtml(f.comment)} »</div>` : ''}
             <div class="testimonial-author">— ${escapeHtml(f.first_name || 'Une collègue')}</div>
           `;
-          wrap.appendChild(card);
+          track.appendChild(card);
 
-          // Un point de navigation par avis (dès qu'il y en a au moins 2)
           if (list.length > 1) {
             const dot = document.createElement('button');
             dot.className = 't-dot' + (i === 0 ? ' active' : '');
             dot.setAttribute('aria-label', 'Avis ' + (i + 1));
-            dot.onclick = () => wrap.children[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            dot.onclick = () => { goTo(i); restart(); };
             dots.appendChild(dot);
           }
         });
 
         dots.classList.toggle('hidden', list.length <= 1);
-
-        // Le point actif suit le défilement au doigt (mesure par coordonnées écran, robuste)
-        if (list.length > 1) {
-          let raf;
-          wrap.addEventListener('scroll', () => {
-            cancelAnimationFrame(raf);
-            raf = requestAnimationFrame(() => {
-              const wr = wrap.getBoundingClientRect();
-              const wrapCenter = wr.left + wr.width / 2;
-              let best = 0, bestDist = Infinity;
-              [...wrap.children].forEach((c, i) => {
-                const r = c.getBoundingClientRect();
-                const d = Math.abs((r.left + r.width / 2) - wrapCenter);
-                if (d < bestDist) { bestDist = d; best = i; }
-              });
-              [...dots.children].forEach((d, i) => d.classList.toggle('active', i === best));
-            });
-          }, { passive: true });
-        }
-
         document.getElementById('testimonials').style.display = 'block';
+
+        // ── Carrousel en boucle ──
+        const n = list.length;
+        let idx = 0, timer = null;
+
+        function goTo(i) {
+          idx = (i + n) % n;                         // boucle : après le dernier → le premier, et inversement
+          track.style.transform = `translateX(-${idx * 100}%)`;
+          [...dots.children].forEach((d, k) => d.classList.toggle('active', k === idx));
+        }
+        function next() { goTo(idx + 1); }
+
+        function start() { if (n > 1 && !timer) timer = setInterval(next, 4500); }
+        function stop()  { clearInterval(timer); timer = null; }
+        function restart() { stop(); start(); }        // relance le minuteur après une action manuelle
+
+        // Glissement au doigt (et à la souris)
+        let x0 = null;
+        const down = x => { x0 = x; stop(); };
+        const up = x => {
+          if (x0 === null) return;
+          const dx = x - x0;
+          if (Math.abs(dx) > 40) goTo(idx + (dx < 0 ? 1 : -1));  // swipe gauche = suivant, droite = précédent
+          x0 = null;
+          start();
+        };
+        const vp = track.parentElement;
+        vp.addEventListener('touchstart', e => down(e.touches[0].clientX), { passive: true });
+        vp.addEventListener('touchend',   e => up(e.changedTouches[0].clientX), { passive: true });
+        vp.addEventListener('mousedown',  e => down(e.clientX));
+        vp.addEventListener('mouseup',    e => up(e.clientX));
+        vp.addEventListener('mouseleave', () => { if (x0 !== null) { x0 = null; start(); } });
+
+        goTo(0);
+        start();
       } catch {}
     }
 
