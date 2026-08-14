@@ -68,6 +68,7 @@
     </div>
 
   </div>
+  <script src="modal.js"></script>
 
   <script>
     let cancelToken = null;
@@ -143,12 +144,12 @@
         } else {
           btn.disabled = false;
           btn.textContent = 'Confirmer l\'annulation';
-          alert(data.error || 'Erreur lors de l\'annulation.');
+          zenAlert({ icon: '🍂', title: 'Oups', message: data.error || 'Erreur lors de l\'annulation.' });
         }
       } catch {
         btn.disabled = false;
         btn.textContent = 'Confirmer l\'annulation';
-        alert('Erreur réseau. Réessayez.');
+        zenAlert({ icon: '🍂', title: 'Erreur réseau', message: 'Vérifie ta connexion et réessaie.' });
       }
     }
 

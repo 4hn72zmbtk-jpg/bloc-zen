@@ -102,10 +102,9 @@
     <!-- Tab 2 : Réservations -->
     <div id="tab-reservations" class="tab-content">
       <div class="histo-sorts" id="bookings-sorts">
-        <button class="sort-chip active" data-sort="soon"  onclick="setBookingSort(this)">🔜 Prochaines d'abord</button>
-        <button class="sort-chip"        data-sort="far"   onclick="setBookingSort(this)">🔭 Lointaines d'abord</button>
-        <button class="sort-chip"        data-sort="upcoming" onclick="setBookingSort(this)">📅 À venir seulement</button>
-        <button class="sort-chip"        data-sort="past"  onclick="setBookingSort(this)">🕓 Passées</button>
+        <button class="sort-chip active" data-filter="all"      onclick="setBookingFilter(this)">Toutes</button>
+        <button class="sort-chip"        data-filter="upcoming" onclick="setBookingFilter(this)">📅 À venir seulement</button>
+        <button class="sort-chip"        data-filter="past"     onclick="setBookingFilter(this)">🕓 Passées</button>
       </div>
       <div id="bookings-count" style="font-size:0.8rem;color:var(--text-muted);font-weight:700;margin-bottom:12px"></div>
 
@@ -118,7 +117,10 @@
             <thead>
               <tr>
                 <th>Statut</th>
-                <th>Date</th>
+                <th onclick="toggleDateSort()" style="cursor:pointer;user-select:none;white-space:nowrap"
+                    title="Cliquer pour trier par date">
+                  Date <span id="date-sort-arrow" style="opacity:0.7">▲</span>
+                </th>
                 <th>Horaire</th>
                 <th>Prénom</th>
                 <th>Nom</th>
@@ -198,6 +200,7 @@
     </div>
 
   </div>
+  <script src="modal.js"></script>
 
   <script>
     const STORAGE_KEY = 'bloczen-admin';
@@ -703,7 +706,9 @@
     }
 
     async function deleteCrmNote(id, el) {
-      if (!confirm('Supprimer cette note ?')) return;
+      const ok = await zenConfirm({ icon: '🗒️', title: 'Supprimer cette note ?',
+        message: 'Elle disparaîtra de ton carnet.', confirmText: 'Supprimer', danger: true });
+      if (!ok) return;
       try {
         await fetch('/api/admin-crm-notes', {
           method: 'DELETE',
@@ -712,7 +717,7 @@
         });
         el.remove();
       } catch {
-        alert('Erreur réseau.');
+        zenAlert({ icon: '🍂', title: 'Erreur réseau', message: 'Réessaie dans un instant.' });
       }
     }
 
@@ -892,7 +897,10 @@
     }
 
     async function deleteDay(date, el) {
-      if (!confirm(`Supprimer tous les créneaux du ${new Date(date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} ?`)) return;
+      const jour = new Date(date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+      const ok = await zenConfirm({ icon: '🗑️', title: 'Supprimer cette journée ?',
+        message: `Tous les créneaux du ${jour} seront retirés.`, confirmText: 'Supprimer', danger: true });
+      if (!ok) return;
       try {
         await fetch('/api/admin-slots', {
           method: 'DELETE',
@@ -901,7 +909,7 @@
         });
         el.remove();
       } catch {
-        alert('Erreur réseau.');
+        zenAlert({ icon: '🍂', title: 'Erreur réseau', message: 'Réessaie dans un instant.' });
       }
     }
 
@@ -914,8 +922,9 @@
     }
 
     // ── Bookings ──────────────────────────────────────
-    let allBookings = [];      // toutes les réservations chargées
-    let bookingSort = 'soon';  // tri/filtre courant
+    let allBookings = [];        // toutes les réservations chargées
+    let bookingFilter = 'all';   // filtre : all | upcoming | past
+    let bookingDir = 'asc';      // sens du tri par la flèche : asc (A→Z) | desc (Z→A)
 
     async function loadBookings() {
       document.getElementById('bookings-loading').style.display = 'block';
@@ -932,10 +941,18 @@
       }
     }
 
-    function setBookingSort(btn) {
+    function setBookingFilter(btn) {
       document.querySelectorAll('#bookings-sorts .sort-chip').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      bookingSort = btn.dataset.sort;
+      bookingFilter = btn.dataset.filter;
+      renderBookings();
+    }
+
+    // Flèche sur l'en-tête "Date" : bascule A→Z / Z→A
+    function toggleDateSort() {
+      bookingDir = bookingDir === 'asc' ? 'desc' : 'asc';
+      const arrow = document.getElementById('date-sort-arrow');
+      if (arrow) arrow.textContent = bookingDir === 'asc' ? '▲' : '▼';
       renderBookings();
     }
 
@@ -956,25 +973,18 @@
       const dateOf = b => (b.available_slots || {}).slot_date || '';
       const estPassee = b => { const d = dateOf(b); return d && d <= today; };
 
-      // Filtrage
+      // Filtrage (chips)
       let liste = allBookings.filter(b => {
-        if (bookingSort === 'upcoming') return !estPassee(b);
-        if (bookingSort === 'past')     return estPassee(b);
+        if (bookingFilter === 'upcoming') return !estPassee(b);
+        if (bookingFilter === 'past')     return estPassee(b);
         return true;
       });
 
-      // Tri par date
+      // Tri par date selon la flèche de l'en-tête
       const clef = b => dateOf(b) + (b.available_slots || {}).time_slot;
-      liste.sort((a, b) => {
-        if (bookingSort === 'soon') {
-          // Les rendez-vous À VENIR en haut (le plus proche d'abord), puis les passés (récent → ancien)
-          const fa = !estPassee(a), fb = !estPassee(b);
-          if (fa !== fb) return fa ? -1 : 1;
-          return fa ? clef(a).localeCompare(clef(b)) : clef(b).localeCompare(clef(a));
-        }
-        // 'far' et 'past' : du plus tardif au plus ancien
-        return clef(b).localeCompare(clef(a));
-      });
+      liste.sort((a, b) => bookingDir === 'asc'
+        ? clef(a).localeCompare(clef(b))    // A→Z : ancien → récent
+        : clef(b).localeCompare(clef(a)));  // Z→A : récent → ancien
 
       const nbFutur = allBookings.filter(b => !estPassee(b)).length;
       const nbPasse = allBookings.length - nbFutur;
@@ -984,7 +994,7 @@
       if (liste.length === 0) {
         document.getElementById('bookings-wrap').style.display = 'block';
         tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:30px">
-          🌿 ${bookingSort === 'upcoming' ? 'Aucune réservation à venir.' : 'Aucune réservation passée.'}</td></tr>`;
+          🌿 ${bookingFilter === 'upcoming' ? 'Aucune réservation à venir.' : 'Aucune réservation passée.'}</td></tr>`;
         return;
       }
 
@@ -1022,7 +1032,10 @@
     }
 
     async function cancelBooking(bookingId, slotId, btn) {
-      if (!confirm('Annuler cette réservation ?')) return;
+      const ok = await zenConfirm({ icon: '📅', title: 'Annuler cette réservation ?',
+        message: 'Le créneau redeviendra disponible pour une autre personne.',
+        confirmText: 'Oui, annuler', cancelText: 'Non, garder', danger: true });
+      if (!ok) return;
       btn.disabled = true;
       btn.textContent = '…';
       try {
@@ -1150,7 +1163,15 @@
     }
 
     async function deleteAvis(id, el) {
-      if (!confirm('Supprimer cet avis définitivement ?')) return;
+      // 1re confirmation
+      const step1 = await zenConfirm({ icon: '⭐', title: 'Supprimer cet avis ?',
+        message: 'Ce petit mot d\'une collègue sera retiré.', confirmText: 'Continuer', cancelText: 'Annuler', danger: true });
+      if (!step1) return;
+      // 2e confirmation (définitif)
+      const step2 = await zenConfirm({ icon: '⚠️', title: 'Es-tu bien sûre ?',
+        message: 'Cette suppression est <strong>définitive</strong> — impossible de récupérer l\'avis ensuite.',
+        confirmText: 'Oui, supprimer définitivement', cancelText: 'Non, le garder', danger: true });
+      if (!step2) return;
       try {
         await fetch('/api/admin-feedbacks', {
           method: 'DELETE',
@@ -1159,7 +1180,7 @@
         });
         el.remove();
       } catch {
-        alert('Erreur réseau.');
+        zenAlert({ icon: '🍂', title: 'Erreur réseau', message: 'Réessaie dans un instant.' });
       }
     }
 

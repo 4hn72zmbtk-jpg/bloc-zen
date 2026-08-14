@@ -521,6 +521,58 @@ footer {
 
 .days-list { display: flex; flex-direction: column; gap: 12px; }
 
+/* ─── Popups maison (DA BLOC ZEN) ─── */
+.zen-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(45, 58, 46, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.zen-modal-overlay.show { opacity: 1; }
+
+.zen-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 380px;
+  width: 100%;
+  padding: 32px 28px;
+  text-align: center;
+  transform: scale(0.92) translateY(8px);
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.zen-modal-overlay.show .zen-modal { transform: scale(1) translateY(0); }
+
+.zen-modal-icon { font-size: 2.2rem; margin-bottom: 12px; line-height: 1; }
+
+.zen-modal h3 {
+  font-family: 'Lora', serif;
+  font-size: 1.3rem;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.zen-modal p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.zen-modal-actions { display: flex; flex-direction: column; gap: 10px; }
+.zen-modal-actions button { margin-top: 0; }
+
 /* ─── Tris du carnet (mini-CRM) ─── */
 .histo-sorts {
   display: flex;
