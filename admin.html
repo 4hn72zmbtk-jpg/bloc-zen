@@ -119,7 +119,7 @@
                 <th>Statut</th>
                 <th onclick="toggleDateSort()" style="cursor:pointer;user-select:none;white-space:nowrap"
                     title="Cliquer pour trier par date">
-                  Date <span id="date-sort-arrow" style="opacity:0.7">▲</span>
+                  Date <span id="date-sort-arrow" style="opacity:0.7">▼</span>
                 </th>
                 <th>Horaire</th>
                 <th>Prénom</th>
@@ -185,7 +185,7 @@
         <div class="histo-sorts" id="histo-sorts">
           <button class="sort-chip active" data-sort="fideles"  onclick="setHistoSort(this)">⭐ Plus fidèles</button>
           <button class="sort-chip"        data-sort="recent"   onclick="setHistoSort(this)">🕐 Venus récemment</button>
-          <button class="sort-chip"        data-sort="ancien"   onclick="setHistoSort(this)">🌱 Sans nouvelles</button>
+          <button class="sort-chip"        data-sort="sansavis" onclick="setHistoSort(this)">💬 Sans avis</button>
           <button class="sort-chip"        data-sort="alpha"    onclick="setHistoSort(this)">🔤 A → Z</button>
         </div>
 
@@ -406,21 +406,20 @@
     function trierHisto(liste) {
       const l = [...liste];
 
-      // Les deux tris par date placent toujours « jamais venue » à la fin
-      if (histoSort === 'recent' || histoSort === 'ancien') {
-        const recent = histoSort === 'recent';
+      // Venus récemment : dernière venue la plus récente d'abord ; jamais venue à la fin
+      if (histoSort === 'recent') {
         return l.sort((a, b) => {
           const da = derniereVenue(a), db = derniereVenue(b);
           if (!da && !db) return 0;
           if (!da) return 1;
           if (!db) return -1;
-          return recent ? db.localeCompare(da) : da.localeCompare(db);
+          return db.localeCompare(da);
         });
       }
       if (histoSort === 'alpha') {
         return l.sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
       }
-      // Par défaut : les plus fidèles
+      // Par défaut (et "Sans avis") : les plus fidèles d'abord
       return l.sort((a, b) => b.seances - a.seances || b.aVenir - a.aVenir);
     }
 
@@ -535,15 +534,20 @@
       const qTel = q.replace(/\D/g, '');
 
       const liste = trierHisto(histoPeople.filter(p =>
-        !q
-        || normSearch(p.nom).includes(q)
-        || normSearch(p.email).includes(q)
-        || (qTel && (p.phone || '').replace(/\D/g, '').includes(qTel))
+        // "Sans avis" : on ne garde que celles qui n'ont laissé aucun avis
+        (histoSort !== 'sansavis' || p.avis.length === 0)
+        && (
+          !q
+          || normSearch(p.nom).includes(q)
+          || normSearch(p.email).includes(q)
+          || (qTel && (p.phone || '').replace(/\D/g, '').includes(qTel))
+        )
       ));
 
+      const suffixe = histoSort === 'sansavis' ? ' sans avis' : ' dans ton carnet';
       document.getElementById('histo-count').textContent =
         q ? `${liste.length} résultat${liste.length > 1 ? 's' : ''} pour « ${document.getElementById('histo-search').value.trim()} »`
-          : `${histoPeople.length} personne${histoPeople.length > 1 ? 's' : ''} dans ton carnet`;
+          : `${liste.length} personne${liste.length > 1 ? 's' : ''}${suffixe}`;
 
       const wrap = document.getElementById('histo-people');
       wrap.innerHTML = '';
@@ -924,7 +928,7 @@
     // ── Bookings ──────────────────────────────────────
     let allBookings = [];        // toutes les réservations chargées
     let bookingFilter = 'all';   // filtre : all | upcoming | past
-    let bookingDir = 'asc';      // sens du tri par la flèche : asc (A→Z) | desc (Z→A)
+    let bookingDir = 'desc';     // sens du tri par la flèche : desc (récent→ancien, ▼) par défaut | asc (▲)
 
     async function loadBookings() {
       document.getElementById('bookings-loading').style.display = 'block';
