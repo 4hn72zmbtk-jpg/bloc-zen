@@ -60,7 +60,17 @@ exports.handler = async () => {
                     Laisser mon petit mot 💚
                   </a>
                 </div>
-                <p style="margin:28px 0 0;color:#5e7361;font-size:13px;text-align:center">
+
+                <div style="margin:26px auto 0;max-width:400px;border-top:1px solid #e4ded3;padding-top:18px">
+                  <p style="text-align:center;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#c5845a;margin:0 0 8px">petit aparté 🌿</p>
+                  <p style="text-align:center;font-size:12.5px;line-height:1.6;color:#7a8f7c;font-style:italic;margin:0">
+                    Plusieurs me demandent comment me dire merci. Sincèrement, votre sourire en repartant, c'est déjà tout.
+                    Et si le cœur vous en dit, un petit mot, une douceur, un café… parfois un petit billet, ça me touche à chaque fois.
+                    Mais rien n'est jamais attendu, promis.
+                  </p>
+                </div>
+
+                <p style="margin:24px 0 0;color:#5e7361;font-size:13px;text-align:center">
                   Merci 🌿<br>— Agnès
                 </p>
               </div>
