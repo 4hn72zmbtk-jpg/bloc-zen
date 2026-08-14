@@ -979,17 +979,18 @@
 
         dots.classList.toggle('hidden', list.length <= 1);
 
-        // Le point actif suit le défilement au doigt
+        // Le point actif suit le défilement au doigt (mesure par coordonnées écran, robuste)
         if (list.length > 1) {
           let raf;
           wrap.addEventListener('scroll', () => {
             cancelAnimationFrame(raf);
             raf = requestAnimationFrame(() => {
-              const center = wrap.scrollLeft + wrap.clientWidth / 2;
+              const wr = wrap.getBoundingClientRect();
+              const wrapCenter = wr.left + wr.width / 2;
               let best = 0, bestDist = Infinity;
               [...wrap.children].forEach((c, i) => {
-                const cardCenter = c.offsetLeft + c.offsetWidth / 2;
-                const d = Math.abs(cardCenter - center);
+                const r = c.getBoundingClientRect();
+                const d = Math.abs((r.left + r.width / 2) - wrapCenter);
                 if (d < bestDist) { bestDist = d; best = i; }
               });
               [...dots.children].forEach((d, i) => d.classList.toggle('active', i === best));
