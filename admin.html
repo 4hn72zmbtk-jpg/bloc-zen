@@ -964,12 +964,16 @@
       });
 
       // Tri par date
+      const clef = b => dateOf(b) + (b.available_slots || {}).time_slot;
       liste.sort((a, b) => {
-        const da = dateOf(a) + (a.available_slots || {}).time_slot;
-        const db = dateOf(b) + (b.available_slots || {}).time_slot;
-        return bookingSort === 'far' || bookingSort === 'past'
-          ? db.localeCompare(da)   // plus lointain / plus récent d'abord
-          : da.localeCompare(db);  // plus proche d'abord
+        if (bookingSort === 'soon') {
+          // Les rendez-vous À VENIR en haut (le plus proche d'abord), puis les passés (récent → ancien)
+          const fa = !estPassee(a), fb = !estPassee(b);
+          if (fa !== fb) return fa ? -1 : 1;
+          return fa ? clef(a).localeCompare(clef(b)) : clef(b).localeCompare(clef(a));
+        }
+        // 'far' et 'past' : du plus tardif au plus ancien
+        return clef(b).localeCompare(clef(a));
       });
 
       const nbFutur = allBookings.filter(b => !estPassee(b)).length;
