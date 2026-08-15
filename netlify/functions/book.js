@@ -87,7 +87,7 @@ async function sendEmails({ firstName, lastName, phone, email, note, dateLabel, 
   const SANS  = "'Nunito', 'Trebuchet MS', 'Segoe UI', Arial, sans-serif";
   const FONTS = `<style>@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Nunito:wght@400;600;700;800&display=swap');</style>`;
 
-  // Habillage commun — même univers que le site : fond crème, carte blanche, vert sauge
+  // Habillage commun, même univers que le site : fond crème, carte blanche, vert sauge
   const wrap = (inner) => `
     ${FONTS}
     <div style="background:#f4f1ea;padding:28px 16px;font-family:${SANS}">
@@ -100,7 +100,7 @@ async function sendEmails({ firstName, lastName, phone, email, note, dateLabel, 
         </div>
         ${inner}
         <p style="margin:28px 0 0;color:#5e7361;font-size:13px;text-align:center">
-          À bientôt pour ta pause 🌿<br>— Agnès
+          À bientôt pour ta pause 🌿<br>Agnès
         </p>
       </div>
     </div>`;
@@ -111,7 +111,7 @@ async function sendEmails({ firstName, lastName, phone, email, note, dateLabel, 
   await transporter.sendMail({
     from,
     to: process.env.ADMIN_EMAIL,
-    subject: `[BLOC ZEN] Nouvelle réservation — ${firstName} ${lastName}`,
+    subject: `[BLOC ZEN] Nouvelle réservation · ${firstName} ${lastName}`,
     html: wrap(`
       <h2 style="font-family:${SERIF};color:#2d3a2e;font-size:19px;margin:0 0 16px;text-align:center">Nouvelle réservation !</h2>
       <div style="text-align:center;margin-bottom:18px">
@@ -135,7 +135,7 @@ async function sendEmails({ firstName, lastName, phone, email, note, dateLabel, 
     await transporter.sendMail({
       from,
       to: email,
-      subject: 'BLOC ZEN — Ta réservation est confirmée 🌿',
+      subject: 'BLOC ZEN · Ta réservation est confirmée 🌿',
       html: wrap(`
         <h2 style="font-family:${SERIF};color:#5a9e74;font-size:19px;margin:0 0 10px;text-align:center">C'est réservé !</h2>
         <p style="text-align:center;margin:0 0 16px">Bonjour ${firstName}, ta séance de relaxation t'attend :</p>

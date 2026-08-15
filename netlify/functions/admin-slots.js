@@ -6,7 +6,7 @@ exports.handler = async (event) => {
   const supaUrl = process.env.SUPABASE_URL;
   const today = new Date().toISOString().split('T')[0];
 
-  // GET — all upcoming slots with their bookings
+  // GET, all upcoming slots with their bookings
   if (event.httpMethod === 'GET') {
     try {
       const res = await fetch(
@@ -22,7 +22,7 @@ exports.handler = async (event) => {
     }
   }
 
-  // POST — add a new day (creates both time slots)
+  // POST, add a new day (creates both time slots)
   if (event.httpMethod === 'POST') {
     const { date } = JSON.parse(event.body || '{}');
     if (!date) return { statusCode: 400, headers: cors(), body: JSON.stringify({ error: 'Date manquante' }) };
@@ -46,7 +46,7 @@ exports.handler = async (event) => {
     }
   }
 
-  // PATCH — toggle a slot's availability
+  // PATCH, toggle a slot's availability
   if (event.httpMethod === 'PATCH') {
     const { slotId, isAvailable } = JSON.parse(event.body || '{}');
     if (!slotId) return { statusCode: 400, headers: cors(), body: JSON.stringify({ error: 'slotId manquant' }) };
@@ -62,7 +62,7 @@ exports.handler = async (event) => {
     }
   }
 
-  // DELETE — remove all slots for a date
+  // DELETE, remove all slots for a date
   if (event.httpMethod === 'DELETE') {
     const { date } = JSON.parse(event.body || '{}');
     if (!date) return { statusCode: 400, headers: cors(), body: JSON.stringify({ error: 'Date manquante' }) };

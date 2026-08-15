@@ -1,4 +1,4 @@
-// Scheduled function — runs once a day.
+// Scheduled function, runs once a day.
 // Finds bookings whose session date is today or earlier, that have an email,
 // and that haven't been asked for feedback yet → sends the "how was it?" email.
 const nodemailer = require('nodemailer');
@@ -40,7 +40,7 @@ exports.handler = async () => {
         await transporter.sendMail({
           from,
           to: b.email,
-          subject: 'BLOC ZEN — Alors, cette petite pause ? 🌿',
+          subject: 'BLOC ZEN · Alors, cette petite pause ? 🌿',
           html: `
             <style>@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Nunito:wght@400;600;700;800&display=swap');</style>
             <div style="background:#f4f1ea;padding:28px 16px;font-family:'Nunito','Trebuchet MS','Segoe UI',Arial,sans-serif">
@@ -54,7 +54,7 @@ exports.handler = async () => {
                 <h2 style="font-family:'Lora',Georgia,serif;color:#2d3a2e;font-size:19px;margin:0 0 12px;text-align:center">Alors, cette pause ?</h2>
                 <p style="text-align:center;margin:0 0 6px">Bonjour ${b.first_name},</p>
                 <p style="text-align:center;margin:0 0 18px">J'espère que ta séance t'a fait du bien 😊<br>
-                Ton petit mot me ferait très plaisir — c'est rapide :</p>
+                Ton petit mot me ferait très plaisir, c'est rapide :</p>
                 <div style="text-align:center">
                   <a href="${feedbackUrl}"
                      style="display:inline-block;padding:13px 26px;background:#6a9478;color:white;text-decoration:none;border-radius:16px;font-weight:bold">
@@ -76,7 +76,7 @@ exports.handler = async () => {
                 </div>
 
                 <p style="margin:24px 0 0;color:#5e7361;font-size:13px;text-align:center">
-                  Namaste 🌿<br>— Agnès
+                  Namaste 🌿<br>Agnès
                 </p>
               </div>
             </div>

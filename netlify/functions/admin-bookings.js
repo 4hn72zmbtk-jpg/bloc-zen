@@ -5,7 +5,7 @@ exports.handler = async (event) => {
   const sb = supabaseHeaders();
   const supaUrl = process.env.SUPABASE_URL;
 
-  // GET — all bookings with slot info
+  // GET, all bookings with slot info
   if (event.httpMethod === 'GET') {
     try {
       const res = await fetch(
@@ -19,7 +19,7 @@ exports.handler = async (event) => {
     }
   }
 
-  // DELETE — admin cancels a booking and frees the slot
+  // DELETE, admin cancels a booking and frees the slot
   if (event.httpMethod === 'DELETE') {
     const { bookingId, slotId } = JSON.parse(event.body || '{}');
     if (!bookingId) return { statusCode: 400, headers: cors(), body: JSON.stringify({ error: 'bookingId manquant' }) };

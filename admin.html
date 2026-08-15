@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BLOC ZEN — Admin</title>
+  <title>BLOC ZEN · Admin</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -317,7 +317,7 @@
         // On s'assure que le mot de passe est bien mémorisé, sinon le déverrouillage n'aurait rien à ouvrir
         try { localStorage.setItem(STORAGE_KEY, adminPassword); } catch {}
         refreshBioButton();
-        show('✅ Face ID activé — plus besoin du mot de passe.', true);
+        show('✅ Face ID activé, plus besoin du mot de passe.', true);
       } catch {
         show('Activation annulée.', false);
       } finally {
@@ -387,7 +387,7 @@
 
     // ── Tabs ─────────────────────────────────────────
     // ── Historique / Mini-CRM ────────────────────────
-    // Tout est calculé à partir des réservations + avis déjà en base — aucune donnée supplémentaire.
+    // Tout est calculé à partir des réservations + avis déjà en base, aucune donnée supplémentaire.
     let histoPeople = [];        // fiches construites, filtrées par la recherche
     let histoSort   = 'fideles'; // tri courant du carnet
 
@@ -553,12 +553,12 @@
       wrap.innerHTML = '';
 
       if (liste.length === 0) {
-        wrap.innerHTML = `<div class="no-bookings">🌱 Personne trouvée — vérifie l'orthographe ?</div>`;
+        wrap.innerHTML = `<div class="no-bookings">🌱 Personne trouvée, vérifie l'orthographe ?</div>`;
         return;
       }
 
       liste.forEach((p, i) => {
-        const derniere = p.datesPassees.length ? fmtJour([...p.datesPassees].sort().slice(-1)[0]) : '—';
+        const derniere = p.datesPassees.length ? fmtJour([...p.datesPassees].sort().slice(-1)[0]) : '-';
 
         const badge = (txt, bg, col) => `<span style="font-size:0.66rem;font-weight:800;text-transform:uppercase;
               letter-spacing:0.05em;margin-left:6px;padding:2px 8px;border-radius:999px;background:${bg};color:${col}">${txt}</span>`;
@@ -575,7 +575,7 @@
 
         const notesHtml = p.notes.length
           ? p.notes.map(n => `<p style="font-size:0.85rem;color:var(--text-muted);font-style:italic;margin:4px 0">
-               « ${escapeHtml(n.texte)} » <span style="font-style:normal;font-size:0.72rem">— ${n.date ? fmtJour(n.date) : ''}</span></p>`).join('')
+               « ${escapeHtml(n.texte)} » <span style="font-style:normal;font-size:0.72rem">${n.date ? fmtJour(n.date) : ''}</span></p>`).join('')
           : `<p style="font-size:0.82rem;color:var(--text-muted);margin:4px 0">Aucun mot laissé.</p>`;
 
         const avisHtml = p.avis.length
@@ -751,7 +751,7 @@
           return;
         }
 
-        // Connexion réussie — on mémorise si la case est cochée
+        // Connexion réussie, on mémorise si la case est cochée
         const remember = document.getElementById('remember');
         if (remember && remember.checked) {
           try { localStorage.setItem(STORAGE_KEY, adminPassword); } catch {}
@@ -1007,8 +1007,8 @@
         const slot = b.available_slots;
         const dateLabel = slot
           ? new Date(slot.slot_date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
-          : '—';
-        const timeLabel = slot ? `${slot.time_slot}–${addMinutes(slot.time_slot, 20)}` : '—';
+          : '-';
+        const timeLabel = slot ? `${slot.time_slot}–${addMinutes(slot.time_slot, 20)}` : '-';
         const passee = estPassee(b);
 
         const statut = passee
@@ -1024,7 +1024,7 @@
           <td>${b.first_name}</td>
           <td>${b.last_name}</td>
           <td>${b.phone}</td>
-          <td style="font-style:italic;color:var(--text-muted);font-size:13px">${b.note || '—'}</td>
+          <td style="font-style:italic;color:var(--text-muted);font-size:13px">${b.note || '-'}</td>
           <td>
             <button class="btn-cancel-booking" onclick="cancelBooking('${b.id}', '${b.slot_id}', this)">
               Annuler
@@ -1113,7 +1113,7 @@
 
       if (feedbacks.length === 0) {
         list.style.display = 'flex';
-        list.innerHTML = `<div class="no-bookings">🌿 ${avisFilter === 'pending' ? 'Tout est traité — aucun avis en attente !' : 'Aucun avis publié pour l\'instant.'}</div>`;
+        list.innerHTML = `<div class="no-bookings">🌿 ${avisFilter === 'pending' ? 'Tout est traité, aucun avis en attente !' : 'Aucun avis publié pour l\'instant.'}</div>`;
         return;
       }
 
@@ -1143,7 +1143,7 @@
           ${f.comment ? `<p style="font-size:0.92rem; color:var(--text); line-height:1.6; margin:6px 0 14px; font-style:italic">« ${escapeHtml(f.comment)} »</p>` : '<p style="color:var(--text-muted);font-size:0.85rem;margin:6px 0 14px">(pas de commentaire)</p>'}
           <button class="slot-toggle ${f.is_public ? 'available' : 'closed'}"
                   onclick="togglePublic('${f.id}', ${!f.is_public}, this)">
-            ${f.is_public ? '👁️ Visible en témoignage — cliquer pour masquer' : '⭐ Mettre en avant (public)'}
+            ${f.is_public ? '👁️ Visible en témoignage, cliquer pour masquer' : '⭐ Mettre en avant (public)'}
           </button>
         `;
         list.appendChild(div);
@@ -1173,7 +1173,7 @@
       if (!step1) return;
       // 2e confirmation (définitif)
       const step2 = await zenConfirm({ icon: '⚠️', title: 'Es-tu bien sûre ?',
-        message: 'Cette suppression est <strong>définitive</strong> — impossible de récupérer l\'avis ensuite.',
+        message: 'Cette suppression est <strong>définitive</strong>, impossible de récupérer l\'avis ensuite.',
         confirmText: 'Oui, supprimer définitivement', cancelText: 'Non, le garder', danger: true });
       if (!step2) return;
       try {

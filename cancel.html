@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BLOC ZEN — Annulation</title>
+  <title>BLOC ZEN · Annulation</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -113,8 +113,8 @@
           ? new Date(slot.slot_date + 'T00:00:00').toLocaleDateString('fr-FR', {
               weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             })
-          : '—';
-        const timeLabel = slot ? `${slot.time_slot} – ${addMinutes(slot.time_slot, 20)}` : '—';
+          : '-';
+        const timeLabel = slot ? `${slot.time_slot} – ${addMinutes(slot.time_slot, 20)}` : '-';
 
         document.getElementById('booking-info').innerHTML = `
           <p>👤 <strong>${bookingData.first_name} ${bookingData.last_name}</strong></p>

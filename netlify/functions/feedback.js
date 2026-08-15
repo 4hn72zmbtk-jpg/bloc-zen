@@ -1,4 +1,4 @@
-// Public feedback endpoint — client leaves a rating + comment via a private link.
+// Public feedback endpoint, client leaves a rating + comment via a private link.
 // GET  ?token=xxx  → validate token, return booking info + whether already submitted
 // POST { token, rating, comment } → save the feedback (once per booking)
 
@@ -68,7 +68,7 @@ exports.handler = async (event) => {
       );
       const existing = await fbRes.json();
       if (Array.isArray(existing) && existing.length > 0) {
-        return fail('Tu as déjà laissé ton avis — merci 🌿');
+        return fail('Tu as déjà laissé ton avis, merci 🌿');
       }
 
       const slot = b.available_slots || {};

@@ -1,4 +1,4 @@
-// Public endpoint — returns only the testimonials Agnès chose to make public.
+// Public endpoint, returns only the testimonials Agnès chose to make public.
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: cors() };
 

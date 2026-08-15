@@ -6,7 +6,7 @@ exports.handler = async (event) => {
 
   const sb = supabaseHeaders();
 
-  // GET — fetch booking info by token
+  // GET, fetch booking info by token
   if (event.httpMethod === 'GET') {
     try {
       const res = await fetch(
@@ -22,7 +22,7 @@ exports.handler = async (event) => {
     }
   }
 
-  // POST — confirm cancellation
+  // POST, confirm cancellation
   if (event.httpMethod === 'POST') {
     try {
       // Find booking

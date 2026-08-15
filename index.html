@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>B.L.O.C ZEN — Pause détente au bloc</title>
+  <title>B.L.O.C ZEN · Pause détente au bloc</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
   <link rel="stylesheet" href="style.css">
   <style>
@@ -601,14 +601,14 @@
         <div class="prescription-label">Son mot</div>
         <p>
           Parce qu'entre deux blocs et trois cafés froids, on oublie parfois de souffler… 😅<br><br>
-          Les jours où je suis de matin comme toi, je te propose <strong>une séance de relaxation douce par pressions manuelles</strong> — rien de médical, juste un vrai moment pour toi.<br><br>
+          Les jours où je suis de matin comme toi, je te propose <strong>une séance de relaxation douce par pressions manuelles</strong>, rien de médical, juste un vrai moment pour toi.<br><br>
           Tête, épaules, mains, pieds… tu choisis, je m'occupe du reste. 🌿<br><br>
           <em>Au plaisir de t'offrir une petite parenthèse dans nos journées bien remplies !</em>
         </p>
       </div>
 
       <div class="infos-section">
-        <div class="info-badge">📍 Salle 4 — Bloc vasculaire</div>
+        <div class="info-badge">📍 Salle 4, Bloc vasculaire</div>
         <div class="info-badge">🕜 13h30 · 14h00</div>
         <div class="info-badge">⏳ ~20 minutes</div>
       </div>
@@ -628,7 +628,7 @@
       <div class="important-section">
         <h3>⚠️ Deux trois trucs importants</h3>
         <ul>
-          <li>C'est entre collègues, sur la base du volontariat — zéro pression !</li>
+          <li>C'est entre collègues, sur la base du volontariat, zéro pression !</li>
           <li>Ce n'est ni un soin ni un acte thérapeutique. Juste de la vraie détente.</li>
           <li>Si tu as une huile ou une crème que tu aimes, amène-la 🧴</li>
           <li>Bonne humeur obligatoire. Ronflements tolérés… dans la limite du raisonnable 😂</li>
@@ -711,7 +711,7 @@
       <div id="dates-container" class="dates-grid" style="display:none"></div>
       <div id="no-dates-msg" class="empty-msg" style="display:none">
         <span class="empty-icon">🌱</span>
-        Pas de créneau ouvert pour l'instant —<br>Agnès n'est pas encore de matin cette semaine.<br><br>
+        Pas de créneau ouvert pour l'instant.<br>Agnès n'est pas encore de matin cette semaine.<br><br>
         <span style="font-size:0.85rem">Repasse bientôt !</span>
       </div>
     </div>
@@ -763,9 +763,9 @@
           <span id="cancel-link-text"></span>
         </div>
         <p class="confirm-sub" style="margin-top:16px">
-          📍 Salle 4 — Bloc vasculaire<br>
+          📍 Salle 4, Bloc vasculaire<br>
           N'oublie pas ton huile ou crème si tu en as une 🌿<br>
-          À tout à l'heure — Agnès
+          À tout à l'heure, Agnès
         </p>
         <br>
         <button class="btn-secondary" onclick="resetBooking()">Faire une autre réservation</button>
@@ -964,7 +964,7 @@
           card.innerHTML = `
             <div class="testimonial-stars">${'⭐'.repeat(f.rating || 0)}</div>
             ${f.comment ? `<div class="testimonial-comment">« ${escapeHtml(f.comment)} »</div>` : ''}
-            <div class="testimonial-author">— ${escapeHtml(f.first_name || 'Une collègue')}</div>
+            <div class="testimonial-author">${escapeHtml(f.first_name || 'Une collègue')}</div>
           `;
           track.appendChild(card);
 

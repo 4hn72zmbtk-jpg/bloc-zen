@@ -1,4 +1,4 @@
-// Avis libre — n'importe qui peut laisser un mot depuis le site, sans lien privé.
+// Avis libre, n'importe qui peut laisser un mot depuis le site, sans lien privé.
 // Enregistré comme les autres avis : PRIVÉ par défaut, Agnès décide de le publier.
 
 exports.handler = async (event) => {
