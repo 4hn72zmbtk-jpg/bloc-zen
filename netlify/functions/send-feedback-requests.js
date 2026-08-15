@@ -66,7 +66,7 @@ exports.handler = async () => {
                   <p style="text-align:center;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#c5845a;margin:0 0 8px">petit aparté 🌿</p>
                   <p style="text-align:center;font-size:12.5px;line-height:1.6;color:#7a8f7c;font-style:italic;margin:0">
                     Plusieurs me demandent comment me dire merci. Sincèrement, votre sourire en repartant, c'est déjà tout.
-                    Je sais à quel point, dans notre métier, vingt minutes rien que pour soi peuvent changer une journée entière : souffler, poser la tête, repartir à zéro. C'est pour ça que ce moment existe.
+                    On fait un métier tellement exigeant… j'ai créé ce moment parce que j'aurais adoré en avoir un pour moi.
                     Certaines aiment quand même glisser un petit geste : un mot, une gourmandise, une petite surprise… parfois un petit billet.
                     Tout me touche autant, et rien n'est jamais attendu.
                   </p>
