@@ -718,6 +718,19 @@ tr:hover td { background: var(--bg); }
 
 .btn-cancel-booking:hover { background: #fdecea; }
 
+.btn-edit-booking {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 9px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin-right: 6px;
+  transition: all 0.2s;
+}
+
+.btn-edit-booking:hover { border-color: var(--primary); background: var(--primary-light); }
+
 .no-bookings { text-align: center; color: var(--text-muted); padding: 40px; font-size: 0.95rem; }
 
 /* ─── Cancel page ─── */

@@ -1026,7 +1026,8 @@
           <td>${b.last_name}</td>
           <td>${b.phone}</td>
           <td style="font-style:italic;color:var(--text-muted);font-size:13px">${b.note || '-'}</td>
-          <td>
+          <td style="white-space:nowrap">
+            <button class="btn-edit-booking" onclick="editBooking('${b.id}')" title="Modifier la fiche">✏️</button>
             <button class="btn-cancel-booking" onclick="cancelBooking('${b.id}', '${b.slot_id}', this)">
               Annuler
             </button>
@@ -1034,6 +1035,82 @@
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    // ── Modifier une fiche (prénom, nom, téléphone, email, note) ──
+    function editBooking(id) {
+      const b = allBookings.find(x => x.id === id);
+      if (!b) return;
+
+      const overlay = document.createElement('div');
+      overlay.className = 'zen-modal-overlay';
+      const champ = (lab, key, val, type) => `
+        <div style="margin-bottom:12px;text-align:left">
+          <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:5px">${lab}</label>
+          <input data-k="${key}" type="${type || 'text'}"
+                 style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:1rem;font-family:'Nunito',sans-serif;color:var(--text);background:var(--surface)">
+        </div>`;
+      overlay.innerHTML = `
+        <div class="zen-modal" style="max-width:420px">
+          <div class="zen-modal-icon">✏️</div>
+          <h3>Modifier la fiche</h3>
+          <div style="margin-top:6px">
+            ${champ('Prénom', 'firstName')}
+            ${champ('Nom', 'lastName')}
+            ${champ('Téléphone', 'phone', '', 'tel')}
+            ${champ('Email', 'email', '', 'email')}
+            ${champ('Note', 'note')}
+          </div>
+          <div id="edit-err" style="display:none;color:var(--error);font-size:0.85rem;font-weight:600;margin:4px 0 12px"></div>
+          <div class="zen-modal-actions">
+            <button class="btn-primary" data-act="save">Enregistrer</button>
+            <button class="btn-secondary" data-act="cancel">Annuler</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => overlay.classList.add('show'));
+
+      // Pré-remplissage (via .value = sûr, pas d'injection HTML)
+      const vals = { firstName: b.first_name, lastName: b.last_name, phone: b.phone, email: b.email || '', note: b.note || '' };
+      overlay.querySelectorAll('input[data-k]').forEach(inp => { inp.value = vals[inp.dataset.k] || ''; });
+
+      const close = () => { overlay.classList.remove('show'); setTimeout(() => overlay.remove(), 200); };
+      overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+      overlay.querySelector('[data-act="cancel"]').onclick = close;
+
+      overlay.querySelector('[data-act="save"]').onclick = async (e) => {
+        const btn = e.target;
+        const data = { bookingId: id };
+        overlay.querySelectorAll('input[data-k]').forEach(inp => { data[inp.dataset.k] = inp.value; });
+        if (!data.firstName.trim() || !data.phone.trim()) {
+          const err = overlay.querySelector('#edit-err');
+          err.textContent = 'Le prénom et le téléphone sont obligatoires.';
+          err.style.display = 'block';
+          return;
+        }
+        btn.disabled = true; btn.textContent = 'Enregistrement…';
+        try {
+          const res = await fetch('/api/admin-bookings', {
+            method: 'PATCH', headers: authHeaders(), body: JSON.stringify(data)
+          });
+          const r = await res.json();
+          if (r.success) {
+            // Met à jour la liste en mémoire et réaffiche
+            const bk = allBookings.find(x => x.id === id);
+            if (bk) { bk.first_name = data.firstName.trim(); bk.last_name = data.lastName.trim(); bk.phone = data.phone.trim(); bk.email = data.email.trim() || null; bk.note = data.note.trim() || null; }
+            renderBookings();
+            close();
+          } else {
+            const err = overlay.querySelector('#edit-err');
+            err.textContent = r.error || 'Erreur.'; err.style.display = 'block';
+            btn.disabled = false; btn.textContent = 'Enregistrer';
+          }
+        } catch {
+          const err = overlay.querySelector('#edit-err');
+          err.textContent = 'Erreur réseau.'; err.style.display = 'block';
+          btn.disabled = false; btn.textContent = 'Enregistrer';
+        }
+      };
     }
 
     async function cancelBooking(bookingId, slotId, btn) {

@@ -19,6 +19,31 @@ exports.handler = async (event) => {
     }
   }
 
+  // PATCH, admin corrige une fiche (prénom, nom, téléphone, email, note)
+  if (event.httpMethod === 'PATCH') {
+    const { bookingId, firstName, lastName, phone, email, note } = JSON.parse(event.body || '{}');
+    if (!bookingId) return { statusCode: 400, headers: cors(), body: JSON.stringify({ error: 'bookingId manquant' }) };
+
+    const body = {};
+    if (firstName !== undefined) body.first_name = firstName.trim();
+    if (lastName  !== undefined) body.last_name  = lastName.trim();
+    if (phone     !== undefined) body.phone      = phone.trim();
+    if (email     !== undefined) body.email      = email.trim() || null;
+    if (note      !== undefined) body.note       = note.trim() || null;
+    if (Object.keys(body).length === 0) return { statusCode: 400, headers: cors(), body: JSON.stringify({ error: 'Rien à modifier' }) };
+
+    try {
+      const res = await fetch(
+        `${supaUrl}/rest/v1/bookings?id=eq.${bookingId}`,
+        { method: 'PATCH', headers: sb, body: JSON.stringify(body) }
+      );
+      if (res.status >= 400) return err('Modification impossible');
+      return ok({ success: true });
+    } catch {
+      return err('Erreur serveur');
+    }
+  }
+
   // DELETE, admin cancels a booking and frees the slot
   if (event.httpMethod === 'DELETE') {
     const { bookingId, slotId } = JSON.parse(event.body || '{}');
