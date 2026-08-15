@@ -19,10 +19,11 @@ exports.handler = async (event) => {
     }
   }
 
-  // PATCH, admin corrige une fiche (prénom, nom, téléphone, email, note)
+  // PATCH, admin corrige une fiche contact. bookingId (une résa) ou bookingIds (toutes les venues d'une personne)
   if (event.httpMethod === 'PATCH') {
-    const { bookingId, firstName, lastName, phone, email, note } = JSON.parse(event.body || '{}');
-    if (!bookingId) return { statusCode: 400, headers: cors(), body: JSON.stringify({ error: 'bookingId manquant' }) };
+    const { bookingId, bookingIds, firstName, lastName, phone, email, note } = JSON.parse(event.body || '{}');
+    const ids = Array.isArray(bookingIds) && bookingIds.length ? bookingIds : (bookingId ? [bookingId] : []);
+    if (ids.length === 0) return { statusCode: 400, headers: cors(), body: JSON.stringify({ error: 'Aucune fiche ciblée' }) };
 
     const body = {};
     if (firstName !== undefined) body.first_name = firstName.trim();
@@ -33,8 +34,9 @@ exports.handler = async (event) => {
     if (Object.keys(body).length === 0) return { statusCode: 400, headers: cors(), body: JSON.stringify({ error: 'Rien à modifier' }) };
 
     try {
+      const filter = ids.length === 1 ? `id=eq.${ids[0]}` : `id=in.(${ids.join(',')})`;
       const res = await fetch(
-        `${supaUrl}/rest/v1/bookings?id=eq.${bookingId}`,
+        `${supaUrl}/rest/v1/bookings?${filter}`,
         { method: 'PATCH', headers: sb, body: JSON.stringify(body) }
       );
       if (res.status >= 400) return err('Modification impossible');

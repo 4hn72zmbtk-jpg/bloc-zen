@@ -102,8 +102,8 @@
     <!-- Tab 2 : Réservations -->
     <div id="tab-reservations" class="tab-content">
       <div class="histo-sorts" id="bookings-sorts">
-        <button class="sort-chip active" data-filter="all"      onclick="setBookingFilter(this)">Toutes</button>
-        <button class="sort-chip"        data-filter="upcoming" onclick="setBookingFilter(this)">📅 À venir seulement</button>
+        <button class="sort-chip"        data-filter="all"      onclick="setBookingFilter(this)">Toutes</button>
+        <button class="sort-chip active" data-filter="upcoming" onclick="setBookingFilter(this)">📅 À venir seulement</button>
         <button class="sort-chip"        data-filter="past"     onclick="setBookingFilter(this)">🕓 Passées</button>
       </div>
       <div id="bookings-count" style="font-size:0.8rem;color:var(--text-muted);font-weight:700;margin-bottom:12px"></div>
@@ -145,8 +145,8 @@
       </p>
 
       <div class="histo-sorts" id="avis-filters">
-        <button class="sort-chip active" data-filter="all"     onclick="setAvisFilter(this)">Tous</button>
-        <button class="sort-chip"        data-filter="pending" onclick="setAvisFilter(this)">🕐 Pas encore acceptés<span id="pending-chip-badge" class="notif-badge" style="display:none">0</span></button>
+        <button class="sort-chip"        data-filter="all"     onclick="setAvisFilter(this)">Tous</button>
+        <button class="sort-chip active" data-filter="pending" onclick="setAvisFilter(this)">🕐 Pas encore acceptés<span id="pending-chip-badge" class="notif-badge" style="display:none">0</span></button>
         <button class="sort-chip"        data-filter="public"  onclick="setAvisFilter(this)">👁️ Publiés</button>
       </div>
       <div id="avis-count" style="font-size:0.8rem;color:var(--text-muted);font-weight:700;margin-bottom:12px"></div>
@@ -479,14 +479,17 @@
         if (!people[k]) {
           people[k] = {
             cle: k,
+            firstName: b.first_name, lastName: b.last_name,
             nom: `${b.first_name} ${b.last_name}`.trim(),
             phone: b.phone, email: b.email,
+            ids: [],
             seances: 0, aVenir: 0,
             datesPassees: [], datesAVenir: [], notes: [], avis: [],
             carnet: crmNotes.filter(n => n.person_key === k)
           };
         }
         const p = people[k];
+        p.ids.push(b.id);                              // toutes les venues de la personne
         if (!p.email && b.email) p.email = b.email;   // complète la fiche si une résa récente a l'email
         if (passee) { p.seances++; if (d) p.datesPassees.push(d); }
         else { p.aVenir++; if (d) p.datesAVenir.push(d); }
@@ -632,7 +635,10 @@
                 ${p.seances} séance${p.seances > 1 ? 's' : ''} · dernière : ${derniere}
               </div>
             </div>
-            <span class="histo-chevron" style="color:var(--text-muted);font-size:0.85rem;transition:transform 0.2s">▼</span>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+              <button class="btn-edit-booking" onclick="event.stopPropagation();editContact('${p.cle}')" title="Corriger la fiche">✏️</button>
+              <span class="histo-chevron" style="color:var(--text-muted);font-size:0.85rem;transition:transform 0.2s">▼</span>
+            </div>
           </div>
           <div style="font-size:0.82rem; color:var(--text-muted); display:flex; gap:14px; flex-wrap:wrap">
             ${p.phone ? `<a href="tel:${p.phone.replace(/\s/g,'')}" onclick="event.stopPropagation()" style="color:var(--primary);text-decoration:none;font-weight:600">📞 ${escapeHtml(p.phone)}</a>` : ''}
@@ -928,7 +934,7 @@
 
     // ── Bookings ──────────────────────────────────────
     let allBookings = [];        // toutes les réservations chargées
-    let bookingFilter = 'all';   // filtre : all | upcoming | past
+    let bookingFilter = 'upcoming';   // filtre par défaut : à venir seulement
     let bookingDir = 'desc';     // sens du tri par la flèche : desc (récent→ancien, ▼) par défaut | asc (▲)
 
     async function loadBookings() {
@@ -1026,8 +1032,7 @@
           <td>${b.last_name}</td>
           <td>${b.phone}</td>
           <td style="font-style:italic;color:var(--text-muted);font-size:13px">${b.note || '-'}</td>
-          <td style="white-space:nowrap">
-            <button class="btn-edit-booking" onclick="editBooking('${b.id}')" title="Modifier la fiche">✏️</button>
+          <td>
             <button class="btn-cancel-booking" onclick="cancelBooking('${b.id}', '${b.slot_id}', this)">
               Annuler
             </button>
@@ -1037,14 +1042,15 @@
       });
     }
 
-    // ── Modifier une fiche (prénom, nom, téléphone, email, note) ──
-    function editBooking(id) {
-      const b = allBookings.find(x => x.id === id);
-      if (!b) return;
+    // ── Corriger une fiche contact (prénom, nom, téléphone, email) ──
+    // Modifie TOUTES les venues de la personne. On ne touche pas au mot du client.
+    function editContact(cle) {
+      const p = histoPeople.find(x => x.cle === cle);
+      if (!p) return;
 
       const overlay = document.createElement('div');
       overlay.className = 'zen-modal-overlay';
-      const champ = (lab, key, val, type) => `
+      const champ = (lab, key, type) => `
         <div style="margin-bottom:12px;text-align:left">
           <label style="display:block;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:5px">${lab}</label>
           <input data-k="${key}" type="${type || 'text'}"
@@ -1053,13 +1059,13 @@
       overlay.innerHTML = `
         <div class="zen-modal" style="max-width:420px">
           <div class="zen-modal-icon">✏️</div>
-          <h3>Modifier la fiche</h3>
+          <h3>Corriger la fiche</h3>
+          <p style="margin-bottom:16px">La correction s'applique à toutes les venues de la personne.</p>
           <div style="margin-top:6px">
             ${champ('Prénom', 'firstName')}
             ${champ('Nom', 'lastName')}
-            ${champ('Téléphone', 'phone', '', 'tel')}
-            ${champ('Email', 'email', '', 'email')}
-            ${champ('Note', 'note')}
+            ${champ('Téléphone', 'phone', 'tel')}
+            ${champ('Email', 'email', 'email')}
           </div>
           <div id="edit-err" style="display:none;color:var(--error);font-size:0.85rem;font-weight:600;margin:4px 0 12px"></div>
           <div class="zen-modal-actions">
@@ -1071,7 +1077,7 @@
       requestAnimationFrame(() => overlay.classList.add('show'));
 
       // Pré-remplissage (via .value = sûr, pas d'injection HTML)
-      const vals = { firstName: b.first_name, lastName: b.last_name, phone: b.phone, email: b.email || '', note: b.note || '' };
+      const vals = { firstName: p.firstName, lastName: p.lastName, phone: p.phone, email: p.email || '' };
       overlay.querySelectorAll('input[data-k]').forEach(inp => { inp.value = vals[inp.dataset.k] || ''; });
 
       const close = () => { overlay.classList.remove('show'); setTimeout(() => overlay.remove(), 200); };
@@ -1080,7 +1086,7 @@
 
       overlay.querySelector('[data-act="save"]').onclick = async (e) => {
         const btn = e.target;
-        const data = { bookingId: id };
+        const data = { bookingIds: p.ids };
         overlay.querySelectorAll('input[data-k]').forEach(inp => { data[inp.dataset.k] = inp.value; });
         if (!data.firstName.trim() || !data.phone.trim()) {
           const err = overlay.querySelector('#edit-err');
@@ -1095,11 +1101,9 @@
           });
           const r = await res.json();
           if (r.success) {
-            // Met à jour la liste en mémoire et réaffiche
-            const bk = allBookings.find(x => x.id === id);
-            if (bk) { bk.first_name = data.firstName.trim(); bk.last_name = data.lastName.trim(); bk.phone = data.phone.trim(); bk.email = data.email.trim() || null; bk.note = data.note.trim() || null; }
-            renderBookings();
             close();
+            loadHistorique();       // recharge le carnet à jour
+            refreshAvisBadge();
           } else {
             const err = overlay.querySelector('#edit-err');
             err.textContent = r.error || 'Erreur.'; err.style.display = 'block';
@@ -1140,7 +1144,7 @@
 
     // ── Avis ──────────────────────────────────────────
     let allAvis = [];          // tous les avis chargés
-    let avisFilter = 'all';    // filtre courant
+    let avisFilter = 'pending';    // filtre par défaut : pas encore acceptés
 
     async function loadAvis() {
       document.getElementById('avis-loading').style.display = 'block';
