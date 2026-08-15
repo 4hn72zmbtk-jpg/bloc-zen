@@ -506,6 +506,13 @@
         (parPrenom[key] = parPrenom[key] || []).push(p);
       });
       feedbacks.filter(f => !f.booking_id).forEach(f => {
+        // 1) Rattachement manuel (person_key) = prioritaire et sûr
+        if (f.person_key && people[f.person_key]) {
+          people[f.person_key].avis.push({ date: f.slot_date || null, rating: f.rating, comment: f.comment, libre: true });
+          return;
+        }
+        if (f.person_key) return;   // rattaché à une fiche disparue : on n'auto-devine pas
+        // 2) Sinon, rattachement auto par prénom UNIQUE
         const matches = parPrenom[normSearch((f.first_name || '').trim())] || [];
         if (matches.length === 1) {
           matches[0].avis.push({ date: f.slot_date || null, rating: f.rating, comment: f.comment, libre: true });
@@ -1258,10 +1265,15 @@
             <button class="btn-delete-day" onclick="deleteAvis('${f.id}', this.closest('.day-item'))">🗑</button>
           </div>
           ${f.comment ? `<p style="font-size:0.92rem; color:var(--text); line-height:1.6; margin:6px 0 14px; font-style:italic">« ${escapeHtml(f.comment)} »</p>` : '<p style="color:var(--text-muted);font-size:0.85rem;margin:6px 0 14px">(pas de commentaire)</p>'}
-          <button class="slot-toggle ${f.is_public ? 'available' : 'closed'}"
-                  onclick="togglePublic('${f.id}', ${!f.is_public}, this)">
-            ${f.is_public ? '👁️ Visible en témoignage, cliquer pour masquer' : '⭐ Mettre en avant (public)'}
-          </button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button class="slot-toggle ${f.is_public ? 'available' : 'closed'}"
+                    onclick="togglePublic('${f.id}', ${!f.is_public}, this)">
+              ${f.is_public ? '👁️ Visible en témoignage, cliquer pour masquer' : '⭐ Mettre en avant (public)'}
+            </button>
+            ${!f.booking_id ? `<button class="slot-toggle ${f.person_key ? 'available' : 'closed'}" onclick="openAttach('${f.id}')">
+              ${f.person_key ? '🔗 Rattaché au carnet' : '🔗 Rattacher à une personne'}
+            </button>` : ''}
+          </div>
         `;
         list.appendChild(div);
       });
@@ -1280,6 +1292,71 @@
       } catch {
         btn.disabled = false;
         btn.style.opacity = '1';
+      }
+    }
+
+    // ── Rattacher un avis "mot libre" à une personne du carnet ──
+    async function openAttach(feedbackId) {
+      const f = allAvis.find(x => x.id === feedbackId);
+      if (!f) return;
+
+      // Liste des personnes (regroupées par clé, comme le carnet)
+      let people = [];
+      try {
+        const res = await fetch('/api/admin-bookings', { headers: authHeaders() });
+        const bs = (await res.json()).bookings || [];
+        const map = {};
+        bs.forEach(b => {
+          const k = personKey(b);
+          if (!map[k]) map[k] = { cle: k, nom: `${b.first_name} ${b.last_name}`.trim(), tel: b.phone, n: 0 };
+          map[k].n++;
+        });
+        people = Object.values(map).sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+      } catch {}
+
+      const overlay = document.createElement('div');
+      overlay.className = 'zen-modal-overlay';
+      overlay.innerHTML = `
+        <div class="zen-modal" style="max-width:420px">
+          <div class="zen-modal-icon">🔗</div>
+          <h3>Rattacher cet avis</h3>
+          <p style="margin-bottom:6px">« ${escapeHtml(f.first_name || 'Anonyme')} » ${'⭐'.repeat(f.rating || 0)}</p>
+          <p style="font-size:0.8rem;margin-bottom:14px">Choisis à qui appartient ce mot :</p>
+          <div id="attach-list" style="max-height:280px;overflow-y:auto;text-align:left;margin-bottom:12px"></div>
+          <div class="zen-modal-actions">
+            ${f.person_key ? `<button class="btn-secondary" data-act="detach">Détacher</button>` : ''}
+            <button class="btn-secondary" data-act="cancel">Fermer</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => overlay.classList.add('show'));
+
+      const listEl = overlay.querySelector('#attach-list');
+      people.forEach(p => {
+        const b = document.createElement('button');
+        const actif = f.person_key === p.cle;
+        b.style.cssText = `display:block;width:100%;text-align:left;padding:11px 14px;margin-bottom:7px;border-radius:var(--radius-sm);cursor:pointer;font-family:'Nunito',sans-serif;font-size:0.92rem;font-weight:700;border:1.5px solid ${actif ? 'var(--primary)' : 'var(--border)'};background:${actif ? 'var(--primary-light)' : 'var(--surface)'};color:var(--text)`;
+        b.innerHTML = `${escapeHtml(p.nom)} ${actif ? '✓' : ''}<span style="display:block;font-weight:400;font-size:0.78rem;color:var(--text-muted)">📞 ${escapeHtml(p.tel || '')} · ${p.n} venue${p.n > 1 ? 's' : ''}</span>`;
+        b.onclick = () => attach(p.cle);
+        listEl.appendChild(b);
+      });
+      if (people.length === 0) listEl.innerHTML = '<p style="color:var(--text-muted)">Aucune personne dans le carnet.</p>';
+
+      const close = () => { overlay.classList.remove('show'); setTimeout(() => overlay.remove(), 200); };
+      overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+      overlay.querySelector('[data-act="cancel"]').onclick = close;
+      const detachBtn = overlay.querySelector('[data-act="detach"]');
+      if (detachBtn) detachBtn.onclick = () => attach(null);
+
+      async function attach(personKeyVal) {
+        try {
+          await fetch('/api/admin-feedbacks', {
+            method: 'PATCH', headers: authHeaders(),
+            body: JSON.stringify({ id: feedbackId, personKey: personKeyVal })
+          });
+          close();
+          await loadAvis();   // recharge (met à jour le libellé du bouton)
+        } catch {}
       }
     }
 

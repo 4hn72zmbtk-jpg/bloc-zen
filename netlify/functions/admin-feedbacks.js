@@ -23,14 +23,21 @@ exports.handler = async (event) => {
   }
 
   if (event.httpMethod === 'PATCH') {
-    const { id, isPublic } = JSON.parse(event.body || '{}');
+    const { id, isPublic, personKey } = JSON.parse(event.body || '{}');
     if (!id) return { statusCode: 400, headers: cors(), body: JSON.stringify({ error: 'id manquant' }) };
+
+    const body = {};
+    if (isPublic  !== undefined) body.is_public  = !!isPublic;
+    if (personKey !== undefined) body.person_key = personKey || null;   // rattacher / détacher
+    if (Object.keys(body).length === 0) return { statusCode: 400, headers: cors(), body: JSON.stringify({ error: 'Rien à modifier' }) };
+
     try {
-      await fetch(`${supaUrl}/rest/v1/feedbacks?id=eq.${id}`, {
+      const res = await fetch(`${supaUrl}/rest/v1/feedbacks?id=eq.${id}`, {
         method: 'PATCH',
         headers: sb,
-        body: JSON.stringify({ is_public: !!isPublic })
+        body: JSON.stringify(body)
       });
+      if (res.status >= 400) return err('Modification impossible (la colonne person_key existe-t-elle ?)');
       return ok({ success: true });
     } catch {
       return err('Erreur serveur');
