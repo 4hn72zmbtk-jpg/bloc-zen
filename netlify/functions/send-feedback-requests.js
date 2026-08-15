@@ -42,15 +42,16 @@ exports.handler = async () => {
           to: b.email,
           subject: 'BLOC ZEN — Alors, cette petite pause ? 🌿',
           html: `
-            <div style="background:#f4f1ea;padding:28px 16px;font-family:Arial,Helvetica,sans-serif">
+            <style>@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Nunito:wght@400;600;700;800&display=swap');</style>
+            <div style="background:#f4f1ea;padding:28px 16px;font-family:'Nunito','Trebuchet MS','Segoe UI',Arial,sans-serif">
               <div style="max-width:520px;margin:0 auto;background:#fdfaf6;border:1px solid #d8d0c4;border-radius:16px;padding:32px 28px;color:#2d3a2e">
                 <div style="text-align:center;margin-bottom:22px">
                   <div style="font-size:30px;line-height:1">🌿</div>
-                  <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;letter-spacing:2px;color:#6a9478;margin-top:6px">
+                  <div style="font-family:'Lora',Georgia,'Times New Roman',serif;font-size:22px;letter-spacing:2px;color:#6a9478;margin-top:6px">
                     B.L.O.C <em style="color:#c5845a">ZEN</em>
                   </div>
                 </div>
-                <h2 style="font-family:Georgia,serif;color:#2d3a2e;font-size:19px;margin:0 0 12px;text-align:center">Alors, cette pause ?</h2>
+                <h2 style="font-family:'Lora',Georgia,serif;color:#2d3a2e;font-size:19px;margin:0 0 12px;text-align:center">Alors, cette pause ?</h2>
                 <p style="text-align:center;margin:0 0 6px">Bonjour ${b.first_name},</p>
                 <p style="text-align:center;margin:0 0 18px">J'espère que ta séance t'a fait du bien 😊<br>
                 Ton petit mot me ferait très plaisir — c'est rapide :</p>

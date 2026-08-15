@@ -82,13 +82,19 @@ async function sendEmails({ firstName, lastName, phone, email, note, dateLabel, 
 
   const from = `"BLOC ZEN" <${process.env.GMAIL_USER}>`;
 
+  // Polices : celles du site en priorité (Apple Mail/iPhone les affichent), repli sûr sinon
+  const SERIF = "'Lora', Georgia, 'Times New Roman', serif";
+  const SANS  = "'Nunito', 'Trebuchet MS', 'Segoe UI', Arial, sans-serif";
+  const FONTS = `<style>@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Nunito:wght@400;600;700;800&display=swap');</style>`;
+
   // Habillage commun — même univers que le site : fond crème, carte blanche, vert sauge
   const wrap = (inner) => `
-    <div style="background:#f4f1ea;padding:28px 16px;font-family:Arial,Helvetica,sans-serif">
+    ${FONTS}
+    <div style="background:#f4f1ea;padding:28px 16px;font-family:${SANS}">
       <div style="max-width:520px;margin:0 auto;background:#fdfaf6;border:1px solid #d8d0c4;border-radius:16px;padding:32px 28px;color:#2d3a2e">
         <div style="text-align:center;margin-bottom:22px">
           <div style="font-size:30px;line-height:1">🌿</div>
-          <div style="font-family:Georgia,'Times New Roman',serif;font-size:22px;letter-spacing:2px;color:#6a9478;margin-top:6px">
+          <div style="font-family:${SERIF};font-size:22px;letter-spacing:2px;color:#6a9478;margin-top:6px">
             B.L.O.C <em style="color:#c5845a">ZEN</em>
           </div>
         </div>
@@ -107,7 +113,7 @@ async function sendEmails({ firstName, lastName, phone, email, note, dateLabel, 
     to: process.env.ADMIN_EMAIL,
     subject: `[BLOC ZEN] Nouvelle réservation — ${firstName} ${lastName}`,
     html: wrap(`
-      <h2 style="font-family:Georgia,serif;color:#2d3a2e;font-size:19px;margin:0 0 16px;text-align:center">Nouvelle réservation !</h2>
+      <h2 style="font-family:${SERIF};color:#2d3a2e;font-size:19px;margin:0 0 16px;text-align:center">Nouvelle réservation !</h2>
       <div style="text-align:center;margin-bottom:18px">
         ${pill('📅 ' + dateLabel)} ${pill('🕐 ' + timeSlot + ' – ' + endTime)}
       </div>
@@ -131,7 +137,7 @@ async function sendEmails({ firstName, lastName, phone, email, note, dateLabel, 
       to: email,
       subject: 'BLOC ZEN — Ta réservation est confirmée 🌿',
       html: wrap(`
-        <h2 style="font-family:Georgia,serif;color:#5a9e74;font-size:19px;margin:0 0 10px;text-align:center">C'est réservé !</h2>
+        <h2 style="font-family:${SERIF};color:#5a9e74;font-size:19px;margin:0 0 10px;text-align:center">C'est réservé !</h2>
         <p style="text-align:center;margin:0 0 16px">Bonjour ${firstName}, ta séance de relaxation t'attend :</p>
         <div style="text-align:center;margin-bottom:20px">
           ${pill('📅 ' + dateLabel)} ${pill('🕐 ' + timeSlot + ' – ' + endTime)} ${pill('📍 Salle 4')}
