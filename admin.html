@@ -498,6 +498,20 @@
         if (fb) p.avis.push({ date: fb.slot_date || d, rating: fb.rating, comment: fb.comment });
       });
 
+      // Rattacher les avis "mot libre" (sans réservation) par prénom UNIQUE.
+      // Sûr : on ne rattache que s'il existe un seul homonyme dans le carnet.
+      const parPrenom = {};
+      Object.values(people).forEach(p => {
+        const key = normSearch(p.firstName.trim());
+        (parPrenom[key] = parPrenom[key] || []).push(p);
+      });
+      feedbacks.filter(f => !f.booking_id).forEach(f => {
+        const matches = parPrenom[normSearch((f.first_name || '').trim())] || [];
+        if (matches.length === 1) {
+          matches[0].avis.push({ date: f.slot_date || null, rating: f.rating, comment: f.comment, libre: true });
+        }
+      });
+
       histoPeople = Object.values(people)
         .sort((a, b) => b.seances - a.seances || b.aVenir - a.aVenir);
 
@@ -583,7 +597,7 @@
 
         const avisHtml = p.avis.length
           ? p.avis.map(a => `<p style="font-size:0.85rem;color:var(--text);margin:4px 0">
-               ${'⭐'.repeat(a.rating || 0)}${a.comment ? `<br><em style="color:var(--text-muted)">« ${escapeHtml(a.comment)} »</em>` : ''}</p>`).join('')
+               ${'⭐'.repeat(a.rating || 0)}${a.libre ? ' <span style="font-size:0.66rem;font-weight:700;text-transform:uppercase;color:var(--accent)">· mot libre</span>' : ''}${a.comment ? `<br><em style="color:var(--text-muted)">« ${escapeHtml(a.comment)} »</em>` : ''}</p>`).join('')
           : `<p style="font-size:0.82rem;color:var(--text-muted);margin:4px 0">Pas encore d'avis.</p>`;
 
         const section = (titre, contenu) => `
