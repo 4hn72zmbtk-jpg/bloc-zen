@@ -498,24 +498,11 @@
         if (fb) p.avis.push({ date: fb.slot_date || d, rating: fb.rating, comment: fb.comment });
       });
 
-      // Rattacher les avis "mot libre" (sans réservation) par prénom UNIQUE.
-      // Sûr : on ne rattache que s'il existe un seul homonyme dans le carnet.
-      const parPrenom = {};
-      Object.values(people).forEach(p => {
-        const key = normSearch(p.firstName.trim());
-        (parPrenom[key] = parPrenom[key] || []).push(p);
-      });
+      // Avis "mot libre" : rattachés UNIQUEMENT si Agnès l'a confirmé (person_key).
+      // Aucune supposition automatique → chiffres 100% sûrs.
       feedbacks.filter(f => !f.booking_id).forEach(f => {
-        // 1) Rattachement manuel (person_key) = prioritaire et sûr
-        if (f.person_key && people[f.person_key]) {
+        if (f.person_key && f.person_key !== 'aucun' && people[f.person_key]) {
           people[f.person_key].avis.push({ date: f.slot_date || null, rating: f.rating, comment: f.comment, libre: true });
-          return;
-        }
-        if (f.person_key) return;   // rattaché à une fiche disparue : on n'auto-devine pas
-        // 2) Sinon, rattachement auto par prénom UNIQUE
-        const matches = parPrenom[normSearch((f.first_name || '').trim())] || [];
-        if (matches.length === 1) {
-          matches[0].avis.push({ date: f.slot_date || null, rating: f.rating, comment: f.comment, libre: true });
         }
       });
 
@@ -1167,14 +1154,32 @@
     let allAvis = [];          // tous les avis chargés
     let avisFilter = 'pending';    // filtre par défaut : pas encore acceptés
 
+    let avisPeople = {};        // clé -> { nom, tel, n }
+    let avisParPrenom = {};     // prénom normalisé -> [clés]
+
     async function loadAvis() {
       document.getElementById('avis-loading').style.display = 'block';
       document.getElementById('avis-list').style.display = 'none';
       document.getElementById('no-avis-msg').style.display = 'none';
       try {
-        const res = await fetch('/api/admin-feedbacks', { headers: authHeaders() });
-        const data = await res.json();
-        allAvis = data.feedbacks || [];
+        const [fRes, bRes] = await Promise.all([
+          fetch('/api/admin-feedbacks', { headers: authHeaders() }),
+          fetch('/api/admin-bookings',  { headers: authHeaders() })
+        ]);
+        allAvis = (await fRes.json()).feedbacks || [];
+
+        // Index des personnes (pour suggérer un rattachement)
+        avisPeople = {}; avisParPrenom = {};
+        ((await bRes.json()).bookings || []).forEach(b => {
+          const k = personKey(b);
+          if (!avisPeople[k]) avisPeople[k] = { cle: k, nom: `${b.first_name} ${b.last_name}`.trim(), tel: b.phone, prenom: b.first_name, n: 0 };
+          avisPeople[k].n++;
+          const pk = normSearch((b.first_name || '').trim());
+          if (!avisParPrenom[pk]) avisParPrenom[pk] = new Set();
+          avisParPrenom[pk].add(k);
+        });
+        Object.keys(avisParPrenom).forEach(k => avisParPrenom[k] = [...avisParPrenom[k]]);
+
         renderAvis();
       } catch {
         document.getElementById('avis-loading').style.display = 'none';
@@ -1215,12 +1220,14 @@
 
       const nbPending = allAvis.filter(f => !f.is_public).length;
       const nbPublic  = allAvis.filter(f => f.is_public).length;
+      const nbAConfirmer = allAvis.filter(f => !f.booking_id && !f.person_key).length;   // mots libres non rattachés
       updateAvisBadge(nbPending);   // garde les pastilles à jour après chaque action
 
       // Compteur + petit rappel s'il reste des avis à traiter
       document.getElementById('avis-count').innerHTML =
           `${allAvis.length} avis`
         + (nbPending ? ` · <span style="color:var(--accent)">${nbPending} pas encore accepté${nbPending > 1 ? 's' : ''}</span>` : '')
+        + (nbAConfirmer ? ` · <span style="color:var(--accent)">🔔 ${nbAConfirmer} à rattacher</span>` : '')
         + (nbPublic ? ` · ${nbPublic} publié${nbPublic > 1 ? 's' : ''}` : '');
 
       const feedbacks = allAvis.filter(f =>
@@ -1249,6 +1256,36 @@
         const starsFull = '⭐'.repeat(f.rating || 0);
         const div = document.createElement('div');
         div.className = 'day-item';
+
+        // ── Contrôle de rattachement (uniquement pour les mots libres) ──
+        let attachHtml = '';
+        if (!f.booking_id) {
+          if (f.person_key && f.person_key !== 'aucun' && avisPeople[f.person_key]) {
+            attachHtml = `<button class="slot-toggle available" onclick="openAttach('${f.id}')">🔗 Rattaché à ${escapeHtml(avisPeople[f.person_key].nom)}</button>`;
+          } else if (f.person_key === 'aucun') {
+            attachHtml = `<button class="slot-toggle closed" onclick="openAttach('${f.id}')">🚫 Hors carnet · modifier</button>`;
+          } else {
+            // Non décidé : suggestion si un seul homonyme, sinon rattachement manuel
+            const matches = avisParPrenom[normSearch((f.first_name || '').trim())] || [];
+            if (matches.length === 1) {
+              const p = avisPeople[matches[0]];
+              attachHtml = `
+                <div style="width:100%;background:var(--accent-light);border:1.5px solid var(--accent);border-radius:var(--radius-sm);padding:12px 14px;margin-top:4px">
+                  <div style="font-size:0.85rem;color:var(--text);margin-bottom:10px">
+                    🔔 À confirmer : est-ce <strong>${escapeHtml(p.nom)}</strong> <span style="color:var(--text-muted)">(📞 ${escapeHtml(p.tel || '')})</span> ?
+                  </div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="slot-toggle available" onclick="markPerson('${f.id}','${matches[0]}')">✅ Oui, c'est elle</button>
+                    <button class="slot-toggle closed" onclick="openAttach('${f.id}')">Non, choisir</button>
+                    <button class="slot-toggle closed" onclick="markPerson('${f.id}','aucun')">Hors carnet</button>
+                  </div>
+                </div>`;
+            } else {
+              attachHtml = `<button class="slot-toggle closed" onclick="openAttach('${f.id}')">🔗 Rattacher à une personne</button>`;
+            }
+          }
+        }
+
         div.innerHTML = `
           <div class="day-item-header" style="align-items:flex-start">
             <div>
@@ -1270,13 +1307,22 @@
                     onclick="togglePublic('${f.id}', ${!f.is_public}, this)">
               ${f.is_public ? '👁️ Visible en témoignage, cliquer pour masquer' : '⭐ Mettre en avant (public)'}
             </button>
-            ${!f.booking_id ? `<button class="slot-toggle ${f.person_key ? 'available' : 'closed'}" onclick="openAttach('${f.id}')">
-              ${f.person_key ? '🔗 Rattaché au carnet' : '🔗 Rattacher à une personne'}
-            </button>` : ''}
+            ${attachHtml}
           </div>
         `;
         list.appendChild(div);
       });
+    }
+
+    // Rattache un avis mot libre : clé réelle (confirmé), 'aucun' (hors carnet) ou null (à re-décider)
+    async function markPerson(feedbackId, personKeyVal) {
+      try {
+        await fetch('/api/admin-feedbacks', {
+          method: 'PATCH', headers: authHeaders(),
+          body: JSON.stringify({ id: feedbackId, personKey: personKeyVal })
+        });
+        await loadAvis();
+      } catch {}
     }
 
     async function togglePublic(id, makePublic, btn) {
@@ -1324,7 +1370,8 @@
           <p style="font-size:0.8rem;margin-bottom:14px">Choisis à qui appartient ce mot :</p>
           <div id="attach-list" style="max-height:280px;overflow-y:auto;text-align:left;margin-bottom:12px"></div>
           <div class="zen-modal-actions">
-            ${f.person_key ? `<button class="btn-secondary" data-act="detach">Détacher</button>` : ''}
+            <button class="btn-secondary" data-act="none">🚫 Personne du carnet (indépendant)</button>
+            ${(f.person_key && f.person_key !== 'aucun') ? `<button class="btn-secondary" data-act="detach">Détacher</button>` : ''}
             <button class="btn-secondary" data-act="cancel">Fermer</button>
           </div>
         </div>`;
@@ -1347,6 +1394,7 @@
       overlay.querySelector('[data-act="cancel"]').onclick = close;
       const detachBtn = overlay.querySelector('[data-act="detach"]');
       if (detachBtn) detachBtn.onclick = () => attach(null);
+      overlay.querySelector('[data-act="none"]').onclick = () => attach('aucun');
 
       async function attach(personKeyVal) {
         try {
