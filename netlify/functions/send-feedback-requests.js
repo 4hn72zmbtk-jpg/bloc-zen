@@ -64,16 +64,19 @@ exports.handler = async () => {
 
                 <div style="margin:26px auto 0;max-width:400px;border-top:1px solid #e4ded3;padding-top:18px">
                   <p style="text-align:center;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;color:#c5845a;margin:0 0 8px">petit aparté 🌿</p>
-                  <p style="text-align:center;font-size:12.5px;line-height:1.6;color:#7a8f7c;font-style:italic;margin:0">
-                    Plusieurs me demandent comment me dire merci. Sincèrement, votre sourire en repartant, c'est déjà tout.
+                  <p style="text-align:center;font-size:12.5px;line-height:1.7;color:#7a8f7c;font-style:italic;margin:0">
+                    Plusieurs me demandent comment me dire merci.<br>Sincèrement, votre sourire en repartant, c'est déjà tout.
+                    <br><br>
                     On fait un métier tellement exigeant… j'ai créé ce moment parce que j'aurais adoré en avoir un pour moi.
+                    <br><br>
                     Certaines aiment quand même glisser un petit geste : un mot, une gourmandise, une petite surprise… parfois un petit billet.
+                    <br><br>
                     Tout me touche autant, et rien n'est jamais attendu.
                   </p>
                 </div>
 
                 <p style="margin:24px 0 0;color:#5e7361;font-size:13px;text-align:center">
-                  Merci 🌿<br>— Agnès
+                  Namaste 🌿<br>— Agnès
                 </p>
               </div>
             </div>
