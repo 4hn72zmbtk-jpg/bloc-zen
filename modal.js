@@ -1,4 +1,4 @@
-// Popups maison à la DA BLOC ZEN — remplacent confirm()/alert() du navigateur.
+// Popups maison à la DA BLOC ZEN, remplacent confirm()/alert() du navigateur.
 // zenConfirm({...}) → Promise<bool> · zenAlert({...}) → Promise<void>
 (function () {
   function open({ icon, title, message, confirmText, cancelText, danger, onDone }) {

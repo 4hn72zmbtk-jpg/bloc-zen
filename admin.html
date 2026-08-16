@@ -1203,6 +1203,13 @@
       });
     }
 
+    // Affiche uniquement les avis mot libre à rattacher (peu importe qu'ils soient publiés ou non)
+    function showAvisARattacher() {
+      document.querySelectorAll('#avis-filters .sort-chip').forEach(b => b.classList.remove('active'));
+      avisFilter = 'arattacher';
+      renderAvis();
+    }
+
     // Récupère le nombre d'avis en attente (appelé dès la connexion, sans ouvrir l'onglet)
     async function refreshAvisBadge() {
       try {
@@ -1227,12 +1234,13 @@
       document.getElementById('avis-count').innerHTML =
           `${allAvis.length} avis`
         + (nbPending ? ` · <span style="color:var(--accent)">${nbPending} pas encore accepté${nbPending > 1 ? 's' : ''}</span>` : '')
-        + (nbAConfirmer ? ` · <span style="color:var(--accent)">🔔 ${nbAConfirmer} à rattacher</span>` : '')
+        + (nbAConfirmer ? ` · <span onclick="showAvisARattacher()" style="color:var(--accent);cursor:pointer;text-decoration:underline">🔔 ${nbAConfirmer} à rattacher</span>` : '')
         + (nbPublic ? ` · ${nbPublic} publié${nbPublic > 1 ? 's' : ''}` : '');
 
       const feedbacks = allAvis.filter(f =>
         avisFilter === 'public' ? f.is_public
         : avisFilter === 'pending' ? !f.is_public
+        : avisFilter === 'arattacher' ? (!f.booking_id && !f.person_key)
         : true
       );
 
@@ -1244,7 +1252,10 @@
 
       if (feedbacks.length === 0) {
         list.style.display = 'flex';
-        list.innerHTML = `<div class="no-bookings">🌿 ${avisFilter === 'pending' ? 'Tout est traité, aucun avis en attente !' : 'Aucun avis publié pour l\'instant.'}</div>`;
+        const vide = avisFilter === 'pending' ? 'Tout est traité, aucun avis en attente !'
+                   : avisFilter === 'arattacher' ? 'Tout est rattaché, plus rien à faire 🌿'
+                   : 'Aucun avis publié pour l\'instant.';
+        list.innerHTML = `<div class="no-bookings">🌿 ${vide}</div>`;
         return;
       }
 
