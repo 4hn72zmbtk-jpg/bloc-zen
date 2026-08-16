@@ -506,6 +506,17 @@
         }
       });
 
+      // Suggestions en attente : mots libres non rattachés dont le prénom pointe vers une seule personne
+      const parPrenom = {};
+      Object.values(people).forEach(p => {
+        const k = normSearch((p.firstName || '').trim());
+        (parPrenom[k] = parPrenom[k] || []).push(p);
+      });
+      feedbacks.filter(f => !f.booking_id && !f.person_key).forEach(f => {
+        const m = parPrenom[normSearch((f.first_name || '').trim())] || [];
+        if (m.length === 1) m[0].suggAvis = (m[0].suggAvis || 0) + 1;
+      });
+
       histoPeople = Object.values(people)
         .sort((a, b) => b.seances - a.seances || b.aVenir - a.aVenir);
 
@@ -594,6 +605,12 @@
                ${'⭐'.repeat(a.rating || 0)}${a.libre ? ' <span style="font-size:0.66rem;font-weight:700;text-transform:uppercase;color:var(--accent)">· mot libre</span>' : ''}${a.comment ? `<br><em style="color:var(--text-muted)">« ${escapeHtml(a.comment)} »</em>` : ''}</p>`).join('')
           : `<p style="font-size:0.82rem;color:var(--text-muted);margin:4px 0">Pas encore d'avis.</p>`;
 
+        // Rappel : avis au même prénom en attente de confirmation
+        const suggHtml = p.suggAvis
+          ? `<div onclick="event.stopPropagation();goToRattacher()" style="margin-top:8px;cursor:pointer;background:var(--accent-light);border:1.5px solid var(--accent);border-radius:var(--radius-sm);padding:9px 12px;font-size:0.82rem;color:var(--accent);font-weight:700">
+               🔔 ${p.suggAvis} avis au même prénom à confirmer (clique pour le rattacher)</div>`
+          : '';
+
         const section = (titre, contenu) => `
           <div style="margin-top:12px">
             <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;
@@ -657,7 +674,7 @@
             ${p.datesAVenir.length ? section('À venir', pills(p.datesAVenir, 'var(--accent-light)', 'var(--accent)')) : ''}
             ${section('📝 Mon carnet (visible par toi seule)', carnetHtml)}
             ${section('Ses mots à la réservation', notesHtml)}
-            ${section('Ses avis', avisHtml)}
+            ${section('Ses avis', avisHtml + suggHtml)}
           </div>
         `;
 
@@ -1208,6 +1225,13 @@
       document.querySelectorAll('#avis-filters .sort-chip').forEach(b => b.classList.remove('active'));
       avisFilter = 'arattacher';
       renderAvis();
+    }
+
+    // Depuis une fiche du carnet : ouvre l'onglet Avis sur les avis à rattacher
+    function goToRattacher() {
+      const btn = [...document.querySelectorAll('.tab-btn')].find(b => b.textContent.includes('Avis'));
+      if (btn) switchTab('tab-avis', btn);
+      setTimeout(showAvisARattacher, 500);
     }
 
     // Récupère le nombre d'avis en attente (appelé dès la connexion, sans ouvrir l'onglet)
